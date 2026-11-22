@@ -1,0 +1,9 @@
+{
+  "name": "treeranksystem",
+  "version": "1.0.0",
+  "description": "treeranksystem —— KSST 演唱技能树学习榜（按微信 openid 存分数）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~2.6.3"
+  }
+}

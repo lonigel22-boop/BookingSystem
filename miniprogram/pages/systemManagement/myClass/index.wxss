@@ -1,0 +1,48 @@
+.myClassSchedule-container{
+  height: 100%;
+  display: position;
+
+  box-sizing: border-box;
+}
+
+.myClassSchedule-container-search{
+}
+
+.myClassSchedule-containe-hint{
+  padding: 10rpx;
+  text-align: center;
+
+}
+
+.myClassSchedule-container-list-btn{
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx;
+}
+
+.myClassSchedule-container-list-swipe{
+  padding: 20rpx 0;
+}
+
+.myClassSchedule-container-list-swipe-btn+.myClassSchedule-container-list-swipe-btn{
+  margin-left: 10rpx;
+}
+
+/* 学生左滑按钮样式 */
+.student-swipe-btns {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-right: 10rpx;
+}
+
+.student-swipe-btn {
+  height: 60%;
+  margin-right: 10rpx;
+}
+
+/* 置顶学生名字样式 */
+.top-student-name .van-collapse-item__title {
+  color: #3f6f70;
+  font-weight: bold;
+}

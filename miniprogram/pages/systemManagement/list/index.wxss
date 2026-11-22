@@ -1,0 +1,41 @@
+/* pages/systemManagement/list/index.wxss */
+.container-list {
+  padding: 20rpx;
+  background-color: #f8f8f8;
+  min-height: 100vh;
+}
+
+.container-list .van-cell {
+  margin-bottom: 20rpx;
+  border-radius: 12rpx;
+  background-color: #fff;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+}
+
+.container-list .van-cell::after {
+  border: none;
+}
+
+.container-list .van-cell-text {
+  color: #3f6f70;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.container-list .van-cell__right-icon-wrap {
+  color: #3f6f70;
+}
+
+.container-list .van-cell:active {
+  background-color: #f0f0f0;
+}
+
+.page-title {
+  padding: 30rpx 20rpx;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #3f6f70;
+  text-align: center;
+  background-color: #fff;
+  border-bottom: 2rpx solid #eee;
+}

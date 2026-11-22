@@ -1,0 +1,36 @@
+<view class="change-container">
+  <van-cell-group>
+    <van-field
+      model:value="{{ account }}"
+      label="账号"
+      placeholder="请输入账号"
+      border="{{ false }}"
+      error-message='{{ accountError }}'
+      required
+      clearable
+    />
+    <van-field
+      model:value="{{ oldPassword }}"
+      type="password"
+      label="原密码"
+      placeholder="请输入密码"
+      border="{{ false }}"
+      error-message='{{ oldPasswordError }}'
+      required
+      clearable
+    />
+    <van-field
+      model:value="{{ newPassword }}"
+      type="password"
+      label="新密码"
+      placeholder="请输入密码"
+      border="{{ false }}"
+      error-message='{{ newPasswordError }}'
+      required
+      clearable
+    />
+  </van-cell-group>
+  <view class="change-container-btn">
+    <van-button color="#3f6f70" size="normal" round hairline bindtap="loadByAccount" block>保存</van-button>
+  </view>
+</view>

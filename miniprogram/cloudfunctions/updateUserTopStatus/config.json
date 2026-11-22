@@ -1,0 +1,15 @@
+{
+  "wx-cloud": {
+    "resources": {
+      "functions": [
+        {
+          "name": "updateUserTopStatus",
+          "config": {
+            "timeout": 20,
+            "envId": "wowmusic-booking-system-cf7f200b"
+          }
+        }
+      ]
+    }
+  }
+}

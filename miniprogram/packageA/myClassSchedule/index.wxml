@@ -1,0 +1,30 @@
+<view class="myClassSchedule-container">
+  <scroll-view style="height: calc(100%)" scroll-y="true" 	lower-threshold ='100' bindscrolltolower="getUsers">
+    <van-collapse value="{{ activeNames }}" bind:change="onChange"  wx:for="{{ userList }}" wx:key="_id" accordion >
+      <van-collapse-item title="学生：{{ item.name ? item.name : item.nickName }}" name="{{index}}">
+
+        <van-collapse value="{{ activeCourses }}" bind:change="onChangeCourse"  wx:for="{{  item.course.course }}" wx:for-item="_item" wx:for-index="_index" wx:key="_id" accordion>
+          <van-collapse-item title="课程：{{ _item.title }}" name="{{_index}}">
+
+            <!-- right-width="{{ 70 }}" -->
+            <van-swipe-cell right-width="{{ 0 }}"  wx:for="{{_item.currentCourse}}" wx:for-item="__item" wx:for-index="__index" wx:key="_id">
+              <van-cell-group>
+                <van-cell title="" value="{{__item.startTimeFormat}}" label="{{__item.shopName + '，' + (__item.room ? __item.room : '-')}}" border="{{ false }}">
+                  <view slot="title">
+                    第{{__index + 1}}节：{{__item.name}}
+                    <van-tag type="success" wx:if="{{__item.finished}}">已完课</van-tag>
+                    <van-tag type="warning" wx:else="">待上课</van-tag>
+                  </view>
+                </van-cell>
+              </van-cell-group>
+              <view slot="right" class="myClassSchedule-container-list-swipe">
+                <van-button class="myClassSchedule-container-list-swipe-btn" color="#ff0000" size="small" data-data="{{ __item }}" bind:tap="deleteMyCourse">取消</van-button>
+              </view>
+            </van-swipe-cell>
+          </van-collapse-item>
+        </van-collapse>
+      </van-collapse-item>
+    </van-collapse>
+    <view class="myClassSchedule-containe-hint" hidden="{{hasMore}}">没有更多数据</view>
+  </scroll-view>
+</view>

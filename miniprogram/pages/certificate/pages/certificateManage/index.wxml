@@ -1,0 +1,66 @@
+<view class="container">
+  <!-- 证书列表区域 -->
+  <view class="certificate-list">
+    <view class="list-header">
+      <text class="header-title">证书列表</text>
+    </view>
+    <view class="list-content">
+      <block wx:if="{{certificates.length > 0}}">
+        <view class="certificate-item" wx:for="{{certificates}}" wx:key="_id">
+          <view class="item-info">
+            <text class="info-label">姓名：</text>
+            <text class="info-value">{{item.name}}</text>
+          </view>
+          <view class="item-info">
+            <text class="info-label">性别：</text>
+            <text class="info-value">{{item.gender}}</text>
+          </view>
+          <view class="item-info">
+            <text class="info-label">证书编号：</text>
+            <text class="info-value">{{item.certificateNumber}}</text>
+          </view>
+          <view class="item-info">
+            <text class="info-label">身份证号：</text>
+            <text class="info-value">{{item.idNumber}}</text>
+          </view>
+          <view class="item-actions">
+            <button class="action-btn edit" bindtap="editCertificate" data-id="{{item._id}}">编辑</button>
+            <button class="action-btn delete" bindtap="deleteCertificate" data-id="{{item._id}}">删除</button>
+          </view>
+        </view>
+      </block>
+      <view wx:else class="no-data">
+        <text>暂无证书数据</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 新增/编辑证书表单 -->
+  <view class="certificate-form">
+    <view class="form-header">
+      <text class="header-title">{{isEditing ? '编辑证书' : '新增证书'}}</text>
+    </view>
+    <view class="form-content">
+      <view class="form-item">
+        <text class="form-label">姓名</text>
+        <input class="form-input" type="text" placeholder="请输入姓名" value="{{formData.name}}" bindinput="onNameInput"/>
+      </view>
+      <view class="form-item">
+        <text class="form-label">性别</text>
+        <radio-group class="radio-group" bindchange="onGenderChange">
+          <radio value="男" checked="{{formData.gender === '男'}}">男</radio>
+          <radio value="女" checked="{{formData.gender === '女'}}">女</radio>
+        </radio-group>
+      </view>
+      <view class="form-item">
+        <text class="form-label">证书编号</text>
+        <input class="form-input" type="text" placeholder="请输入证书编号" value="{{formData.certificateNumber}}" bindinput="onCertificateNumberInput"/>
+      </view>
+      <view class="form-item">
+        <text class="form-label">身份证号</text>
+        <input class="form-input" type="text" placeholder="请输入身份证号" value="{{formData.idNumber}}" bindinput="onIdNumberInput"/>
+      </view>
+      <button class="submit-btn" bindtap="submitForm">{{isEditing ? '保存修改' : '添加证书'}}</button>
+    </view>
+  </view>
+</view>

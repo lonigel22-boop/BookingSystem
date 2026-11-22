@@ -1,0 +1,15 @@
+.courseManagmentHandle-content{
+  height: 100%;
+  position: relative;
+  padding-bottom: 200rpx;
+}
+
+.courseManagmentHandle-content-btn{
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 20rpx;
+  box-sizing: border-box;
+  box-shadow: 0 0 20rpx #cdcdcd;
+}

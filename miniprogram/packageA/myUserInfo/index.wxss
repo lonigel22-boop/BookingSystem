@@ -1,0 +1,36 @@
+.user-info .item{
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 20rpx 30rpx;
+	border-bottom: solid 1px #e4e4e4;
+}
+
+.user-info .item .item-img{
+	width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+}
+
+.user-info .item .item-header {
+  background: #3f6f6f;
+  border-radius: 30rpx;
+}
+
+.user-info .item  input{
+	/* border: solid 1px #cdcdcd; */
+	width: 60%;
+	height: 70rpx;
+	padding: 0 5rpx;
+	text-align: right;
+}
+
+.user-info  .save{
+	margin: 40rpx 0 0 5% ;
+	width: 90%;
+	height: 70rpx;
+	line-height: 70rpx;
+	border-radius: 140rpx;
+  font-size: 36rpx;
+  background: #3f6f6f;
+}

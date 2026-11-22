@@ -1,0 +1,169 @@
+<view class="appointmentCourseHandle">
+  <view class="appointmentCourseHandle-list">
+    <van-field
+      value="{{ startTime }}"
+      center
+      clearable
+      label="时间"
+      placeholder="请选择时间"
+      border="{{ false }}"
+      use-button-slot
+      readonly
+    >
+      <van-button slot="button" color="#3f6f70" size="small" bind:tap="seletedDateTime">选择时间</van-button>
+    </van-field>
+
+
+
+    <van-field
+      value="{{ shop }}"
+      center
+      label="门店"
+      placeholder="请选择门店"
+      border="{{ false }}"
+      use-button-slot
+      readonly
+    >
+      <van-button slot="button" color="#3f6f70" size="small" bind:tap="seletedShop">选择门店</van-button>
+    </van-field>
+
+    <van-field
+      value="{{ room }}"
+      center
+      label="房间"
+      placeholder="请选择房间"
+      border="{{ false }}"
+      use-button-slot
+      readonly
+    >
+      <van-button slot="button" color="#3f6f70" size="small" bind:tap="seletedRoom">选择房间</van-button>
+    </van-field>
+
+    <van-field
+      value="{{ duration / 60 / 1000 + 1}}"
+      center
+      label="课堂时长（分钟）"
+      placeholder="请输入时长"
+      border="{{ false }}"
+      type="number"
+      bind:change="onDurationChange"
+
+    ></van-field>
+
+
+  </view>
+
+    <view class="appointmentCourseHandle-handle">
+      <van-button color="#3f6f70" size="small" bind:tap="cancleCourse">取消</van-button>
+      <van-button color="#3f6f70" size="small" bind:tap="saveAppointment">保存</van-button>
+    </view>
+
+    <!-- 时间 -->
+    <van-popup
+      show="{{ showDateTime }}"
+      position="bottom"
+      custom-style="height: 50%;"
+      bind:close="closeDateTime"
+    >
+      <van-datetime-picker
+        type="datetime"
+        value="{{ currentDate }}"
+        min-date="{{ minDate }}"
+        max-date="{{ maxDate }}"
+        bind:input="onInput"
+        bind:confirm="dateConfirm"
+        bind:cancel="dateCancel"
+        formatter="{{ formatter }}"
+      />
+    </van-popup>
+
+    <!-- 门店 -->
+    <van-popup
+      show="{{ showShop }}"
+      round
+      position="right"
+      custom-style="height: 100%; width: 70%;"
+      bind:close="onShopClose"
+      closeable
+    >
+      <view class="appointmentCourseHandle-container-popup">
+        <van-field
+          model:value="{{ searchShopName }}"
+          center
+          clearable
+          label=""
+          placeholder="请输入昵称或者姓名"
+          border="{{ false }}"
+          use-button-slot
+        >
+          <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="searchShop">
+            搜索
+          </van-button>
+        </van-field>
+
+        <view class="appointmentCourseHandle-container-popup-list">
+          <van-radio-group value="{{ checkShop }}" bind:change="checkShopChange">
+            <van-radio  custom-class="appointmentCourseHandle-container-popup-list-checkbox" name="{{item._id}}" checked-color="#3f6f70" wx:for="{{ shopList }}" wx:key="_id">{{ item.text }}</van-radio>
+          </van-radio-group>
+        </view>
+
+        <view class="appointmentCourseHandle-container-popup-btn">
+          <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="saveShop">
+            添加
+          </van-button>
+        </view>
+      </view>
+    </van-popup>
+
+    <!-- 房间 -->
+    <van-popup
+      show="{{ showRoom }}"
+      round
+      position="right"
+      custom-style="height: 100%; width: 70%;"
+      bind:close="closeRoom"
+      closeable
+    >
+
+    <!-- 时长选择器 -->
+    <van-popup
+      show="{{ showDurationPicker }}"
+      round
+      position="bottom"
+      custom-style="height: 40%;"
+      bind:close="closeDurationPicker"
+      closeable
+    >
+      <view style="padding: 20rpx;">
+        <text>当前时长: {{ duration/60/1000 }} 分钟</text>
+      </view>
+      <van-picker
+        columns="{{ [30, 45, 60, 90, 120] }}"
+        title="选择课堂时长（分钟）"
+        show-toolbar
+        bind:confirm="confirmDuration"
+        bind:cancel="closeDurationPicker"
+      />
+    </van-popup>
+      <view class="appointmentCourseHandle-container-popup">
+        <view class="appointmentCourseHandle-container-popup-list">
+          <van-radio-group value="{{ checkRoom }}" bind:change="checkRoomChange">
+            <van-radio  custom-class="appointmentCourseHandle-container-popup-list-checkbox" name="{{item}}" checked-color="#3f6f70" wx:for="{{ roomList }}" wx:key="_id">{{ item }}</van-radio>
+          </van-radio-group>
+          <view wx:if="{{roomList && !roomList.length}}" style="display: flex; flex-direction: column; align-items: center;padding: 80rpx;">
+            <image 
+            style="width: 240rpx; height: 200rpx;"
+            src="../../../images/nodata.png"
+            />
+            <view style="color: #000000; font-size: 32rpx; padding: 20rpx;">还没有房间数据</view>
+          </view>
+        </view>
+
+        <view class="appointmentCourseHandle-container-popup-btn">
+          <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="saveRoom">
+            添加
+          </van-button>
+        </view>
+      </view>
+    </van-popup>
+</view>

@@ -1,0 +1,82 @@
+<view class="calendar-container">
+  <!-- 年月选择器 -->
+  <view class="calendar-header">
+    <van-field
+      model:value="{{ currentDate }}"
+      center
+      readonly
+      label=""
+      placeholder="请选择年月"
+      border="{{ false }}"
+      use-button-slot
+    >
+      <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="showDatePicker">
+        选择日期
+      </van-button>
+      <van-button
+        slot="button"
+        type="info"
+        size="small"
+        bind:tap="exportClassHours"
+        custom-class="export-btn"
+        style="margin-left: 10px"
+      >
+        导出课时
+      </van-button>
+    </van-field>
+  </view>
+
+  <!-- 日历主体 -->
+  <view class="calendar-body">
+    <!-- 日期网格 -->
+    <view class="calendar-grid">
+      <view class="calendar-day {{ item.isCurrentMonth ? 'current-month' : 'other-month' }} {{ item.isWeekend ? 'weekend' : '' }}" 
+            wx:for="{{ days }}" 
+            wx:key="date"
+            bind:tap="showDayDetail"
+            data-date="{{ item.date }}">
+        <view class="day-number">{{ item.day }}</view>
+        <view class="day-courses" wx:if="{{ item.courses.length > 0 }}">
+          <view class="course-dot" wx:for="{{ item.courses }}" wx:for-item="course" wx:key="id"></view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 课程详情区域 -->
+  <view class="course-detail-section" wx:if="{{ selectedDate }}">
+    <view class="day-detail-header">{{ selectedDate }} 课程安排</view>
+    <view class="day-detail-content">
+      <block wx:if="{{ selectedDayCourses.length > 0 }}">
+        <view class="course-item" wx:for="{{ selectedDayCourses }}" wx:key="id">
+          <view class="course-time-section">
+            <view class="course-time">{{ item.startTime }}</view>
+            <view class="course-student">{{ item.studentName }}</view>
+          </view>
+          <view class="course-info">
+            <view class="course-title">{{ item.title }}</view>
+            <view class="course-location">{{ item.location }}</view>
+          </view>
+        </view>
+      </block>
+      <view class="no-course" wx:else>当天暂无课程安排</view>
+    </view>
+  </view>
+
+  <!-- 年月选择器弹窗 -->
+  <van-popup
+    show="{{ showDatePicker }}"
+    position="bottom"
+    round
+    bind:close="onCloseDatePicker"
+  >
+    <van-datetime-picker
+      type="year-month"
+      value="{{ currentDateTimestamp }}"
+      min-date="{{ minDate }}"
+      max-date="{{ maxDate }}"
+      bind:confirm="onDateConfirm"
+      bind:cancel="onCloseDatePicker"
+    />
+  </van-popup>
+</view>

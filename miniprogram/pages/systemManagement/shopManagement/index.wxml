@@ -1,0 +1,101 @@
+<view class="sm-container">
+  <view class="sm-container-shop">
+    <van-collapse accordion value="{{ activeName }}"  bind:change="onChange">
+      <van-collapse-item title="{{item.text}}" name="{{item._id}}"  wx:for="{{shopList}}" wx:key="_id">
+
+        <van-swipe-cell right-width="{{ 160 }}"  title="{{item.text}}" >
+          <van-cell title="{{item.text}}" value="" />
+          <view slot="right" class="sm-container-shop-handle">
+            <van-button class="sm-container-shop-handle-btn" slot="button" size="small" type="primary" color="#3f6f70" data-item="{{ item }}" bind:tap="shopEdit">
+              编辑
+            </van-button>
+            <van-button class="sm-container-shop-handle-btn" slot="button" size="small" type="primary" color="#ff0000" data-item="{{ item }}" bind:tap="deleteShop">
+              删除
+            </van-button>
+          </view>
+        </van-swipe-cell>
+        <view class="sm-container-shop-info">
+          <view class="sm-container-shop-info-text">营业时间：{{ item.time }} </view>
+          <view class="sm-container-info-shop-text">地址：{{ item.address }} </view>
+          <view class="sm-container-info-shop-text">联系电话：{{ item.phone }}</view>
+          <view class="sm-container-info-shop-text">房间：{{ item.room }}</view>
+        </view>
+
+      </van-collapse-item>
+    </van-collapse>
+
+    <view class="sm-container-btn">
+      <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="addShop">
+        添加门店
+      </van-button>
+    </view>
+  </view>
+
+  <van-overlay show="{{editOverlay }}">
+    <view class="sm-container-edit">
+      <view class="sm-container-info-info">
+        <van-field
+            label="营业时间："
+            model:value="{{ time }}"
+            placeholder="请输入用户名"
+            border
+            clearable
+            data-time="{{item}}"
+          />
+        <van-field
+            label="地址："
+            model:value="{{ address }}"
+            placeholder="请输入用户名"
+            border
+            clearable
+            data-address="{{address}}"
+          />
+          <van-field
+            label="联系电话："
+            model:value="{{ phone }}"
+            placeholder="请输入用户名"
+            border
+            clearable
+            data-phone="{{phone}}"
+          />
+          <view class="sm-container-info-info-input">
+            <van-field
+              label="房间："
+              model:value="{{ room }}"
+              placeholder="请输入房间"
+              border
+              clearable
+              data-phone="{{phone}}"
+              error-message="提示：输入格式为逗号隔开：xx房,xx房,xx房"
+            />
+          </view>
+      </view>
+      <view class="sm-container-btn">
+        <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="hideEditOverlay">
+          取消
+        </van-button>
+        <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="saveShop">
+          保存
+        </van-button>
+      </view>
+    </view>
+  </van-overlay>
+
+  <van-dialog
+    use-slot
+    title="门店名称"
+    show="{{ showAdd }}"
+    show-cancel-button
+    bind:close="onClose"
+    bind:confirm="confirm"
+  >
+    <van-field
+          label="门店名称："
+          model:value="{{ addShopText }}"
+          placeholder="请输入用户名"
+          border
+          clearable
+          data-phone="{{addShopText}}"
+        />
+  </van-dialog>
+</view>

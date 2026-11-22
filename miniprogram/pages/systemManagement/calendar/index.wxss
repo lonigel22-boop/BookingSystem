@@ -1,0 +1,166 @@
+.calendar-container {
+  padding: 20rpx;
+  background-color: #fff;
+  min-height: 100vh;
+}
+
+.calendar-header {
+  margin-bottom: 30rpx;
+}
+
+.calendar-body {
+  background: #fff;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  padding: 20rpx;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2rpx;
+  padding: 10rpx 0;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10rpx;
+  position: relative;
+  border-radius: 8rpx;
+}
+
+.calendar-day:active {
+  background-color: rgba(63, 111, 112, 0.1);
+}
+
+.current-month {
+  color: #333;
+}
+
+.other-month {
+  color: #ccc;
+}
+
+.weekend {
+  background-color: #3f6f70;
+  color: #fff;
+}
+
+.weekend .course-dot {
+  background-color: #fff;
+}
+
+.day-number {
+  font-size: 28rpx;
+  margin-bottom: 10rpx;
+}
+
+.day-courses {
+  display: flex;
+  gap: 4rpx;
+  justify-content: center;
+}
+
+.course-dot {
+  width: 8rpx;
+  height: 8rpx;
+  border-radius: 50%;
+  background-color: #3f6f70;
+}
+
+.day-detail {
+  padding: 30rpx;
+}
+
+.course-detail-section {
+  margin-top: 30rpx;
+  background: #fff;
+  border-radius: 12rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
+  padding: 20rpx;
+}
+
+.day-detail-header {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  text-align: center;
+  padding-bottom: 20rpx;
+  border-bottom: 2rpx solid #eee;
+}
+
+.day-detail-content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.course-item {
+  display: flex;
+  padding: 20rpx 0;
+  border-bottom: 1px solid #eee;
+}
+
+.course-time-section {
+  min-width: 140rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.course-time {
+  color: #3f6f70;
+  font-weight: bold;
+  font-size: 32rpx;
+}
+
+.course-student {
+  color: #3f6f70;
+  font-size: 26rpx;
+  margin-top: 8rpx;
+}
+
+.course-info {
+  flex: 1;
+  margin-left: 20rpx;
+}
+
+.course-title {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.course-location {
+  font-size: 24rpx;
+  color: #666;
+}
+
+.no-course {
+  text-align: center;
+  color: #999;
+  padding: 40rpx 0;
+  font-size: 28rpx;
+}
+.course-title {
+  font-size: 30rpx;
+  color: #333;
+  margin-bottom: 8rpx;
+}
+
+.course-location {
+  font-size: 26rpx;
+  color: #666;
+  margin: 4rpx 0;
+}
+
+.no-courses {
+  text-align: center;
+  color: #999;
+  padding: 40rpx 0;
+  font-size: 28rpx;
+}

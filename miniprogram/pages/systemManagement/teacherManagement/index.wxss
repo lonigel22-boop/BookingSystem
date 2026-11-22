@@ -1,0 +1,86 @@
+.teacherManagement-container{
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.teacherManagement-container-handle{
+  padding: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.teacherManagement-container-list{
+  padding: 30rpx 0 30rpx 10rpx;
+  height: 100%;
+  overflow-y: scroll;
+}
+
+.teacherManagement-container-list-swipe{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  background: #fff;
+}
+
+.teacherManagement-container-popup{
+  padding-top: 80rpx;
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.teacherManagement-container-popup-list{
+  padding: 20rpx 10rpx;
+  box-sizing: border-box;
+  height: 100%;
+  overflow-y: scroll;
+}
+
+.teacherManagement-container-popup-list-hint{
+  width: 100%;
+  padding: 10rpx;
+  text-align: center;
+  color: #cdcdcd;
+}
+
+.teacherManagement-container-popup-list-checkbox{
+  padding: 10rpx 0;
+}
+
+.teacherManagement-container-popup-btn{
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx;
+}
+
+.cell-group{
+  width: 100%;
+  display: block;
+  padding-right: 40rpx;
+  box-sizing: border-box;
+}
+
+.movable-area{
+  width: 100%;
+  /* height: calc(100vh - 72rpx); */
+  display: block;
+}
+
+.movable-item{
+  width: 100%;  
+  height: 50px;  
+  line-height: 50px;  
+  text-align: center;  
+  background-color: #f0f0f0;  
+  margin-bottom: 10px;  
+  position: absolute; 
+}
+
+.movable-item-swipe-cell{
+  width: 100%;
+}

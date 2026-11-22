@@ -1,0 +1,92 @@
+.container{
+  padding: 20rpx;
+}
+.content-header{
+  width: 100%;
+  height: 200rpx;
+  padding: 20rpx;
+  background: #000;
+}
+.content-header .container-header-img{
+  width: 100%;
+  height: 100%;
+}
+.content-header .container-header-shop{
+  width: 100%;
+  padding: 0rpx;
+  box-sizing: border-box;
+  margin: 0 auto;
+  background: #fff;
+}
+.content-header .container-header-info{
+  padding: 20rpx;
+  font-size: 28rpx;
+}
+.content-header .container-header-info .container-header-info-text{
+  padding: 10rpx 6rpx;
+  position: relative;
+}
+.content-header .container-header-info .container-header-info-text image{
+  width: 40rpx;
+  height: 40rpx;
+  position: absolute;
+  right: 0;
+}
+
+.container-teacher{
+  margin-top: 290rpx;
+  padding: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  color: #3a4c41;
+  font-size: 36rpx;
+  font-weight: 600;
+}
+
+.container-swiper{
+  width: 100%;
+  background: #fff;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+.container-swiper-item{
+  display: flex;
+  align-items: center;
+}
+
+.container-swiper-item-text{
+  padding: 20rpx;
+  font-size: 28rpx;
+  flex: 1;
+  font-size: 28rpx;
+}
+
+.container-swiper-item-text-item{
+  padding: 6rpx;
+}
+
+.container-swiper-item-text-overflow{
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.container-swiper-item-text-p{
+  padding: 6rpx;
+}
+
+.container-swiper-item-img{
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 50%;
+  box-shadow: 0rpx 0rpx 20rpx 10rpx #e0e0e0;
+}
+
+.index-dialog-class-view{
+  text-align: center;
+  padding: 10rpx;
+}

@@ -1,0 +1,55 @@
+<view class="teacher">
+ <view class="teacher-box">
+  <image 
+    class="teacher-box-img"
+    src="{{ item.avatarUrl }}"
+  />
+  <text class=teacher-box-txt">1231231</text>
+ </view>
+ <view class="teacher-schedule">
+    <view class="teacher-schedule-title">
+      我的课表 <van-icon name="edit" bindtap="" class="teacher-schedule-title-btn" />
+    </view>
+    <view class="teacher-schedule-time">
+      <view bindtap="selectTime">
+        {{currentDate}}
+        <van-icon name="edit" class="teacher-schedule-title-btn" />
+      </view>
+    </view>
+    <view class="teacher-schedule-content">
+      <van-tabs class="teacher-schedule-content-grid" animated swipeable>
+        <van-tab title="周一">
+          <view class="teacher-schedule-content-grid-item">
+            <view class="item-item"><view bindtap="timeSelect">08:00 - 09:00<van-icon name="edit" style="color: #f00;"/></view> <text>名字</text></view>
+          </view>
+        </van-tab>
+        <van-tab title="周二">周二</van-tab>
+        <van-tab title="周三">周三</van-tab>
+        <van-tab title="周四">周四</van-tab>
+        <van-tab title="周五">周五</van-tab>
+        <van-tab title="周六">周六</van-tab>
+        <van-tab title="周日">周日</van-tab>
+      </van-tabs>
+      <view class="teacher-schedule-btn">
+        <van-button type="primary" bindtap="">添加</van-button>
+        <van-button type="primary" bindtap="">保存</van-button>
+      </view>
+    </view>
+ </view>
+</view>
+
+<van-calendar show="{{ calendar }}" round="false" position="right"  bind:close="onClose"
+  bind:confirm="onConfirm" />
+
+<van-popup
+  show="{{ picker }}"
+  position="bottom"
+>
+  <van-datetime-picker
+    type="time"
+    value="{{ currentTime }}"
+    bind:input="pickerInput"
+    bind:cancel="popupClose"
+    bind:confirm="popupConfirm"
+  />
+</van-popup>

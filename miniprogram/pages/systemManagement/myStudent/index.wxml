@@ -1,0 +1,37 @@
+<view class="teacherManagement-container">
+  <view class="teacherManagement-container-handle">
+    <van-field
+      model:value="{{ userName }}"
+      center
+      clearable
+      label=""
+      placeholder="请输入昵称或者姓名"
+      border="{{ false }}"
+      use-button-slot
+    >
+      <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="searchUsers">
+        搜索
+      </van-button>
+    </van-field>
+    <!-- <van-button class="login-container-btn-edit" color="#3f6f70" size="small" round hairline bindtap="addStudent" custom-style="padding: 0 40rpx;">添加学生</van-button> -->
+    <van-button class="login-container-btn-edit" color="#3f6f70" size="small" round hairline bindtap="addStudentInfo" custom-style="padding: 0 40rpx;">添加学生</van-button>
+  </view>
+  <view class="teacherManagement-container-list" wx:if="{{userList && userList.length}}">
+    <scroll-view style="height: calc(100%)" scroll-y="true" 	lower-threshold ='100' bindscrolltolower="getUsers">
+      <van-cell-group>
+        <van-cell title="{{item.name ? item.name : item.nickName}}" label="{{item.courseName}}" wx:for="{{ userList }}" wx:key="_id">
+          <van-button class="teacherManagement-container-list-btn" color="#3f6f70" size="small" round hairline data-data="{{ item }}" bindtap="editStudent" custom-style="padding: 0 40rpx;">编辑</van-button>
+          <van-button class="teacherManagement-container-list-btn" color="#ff0000" size="small" round hairline data-data="{{item}}" bindtap="deleteStudent" custom-style="padding: 0 40rpx;">删除</van-button>
+        </van-cell>
+      </van-cell-group>
+      <view class="teacherManagement-container-popup-list-hint" hidden="{{hasMore}}">没有更多数据</view>
+    </scroll-view>
+  </view>
+  <view wx:else style="display: flex; flex-direction: column; align-items: center;padding: 80rpx;">
+      <image 
+      style="width: 240rpx; height: 200rpx;"
+      src="../../../images/nodata.png"
+      />
+      <view style="color: #000; font-size: 32rpx; padding: 20rpx;">还没有学生</view>
+    </view>
+</view>

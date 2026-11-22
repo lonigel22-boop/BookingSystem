@@ -1,0 +1,38 @@
+<view class="container">
+  <view class="header">
+    <text class="title">证书验证系统</text>
+  </view>
+  
+  <view class="search-box">
+    <input type="text" class="search-input" placeholder="请输入证书编号或姓名" bindinput="onSearchInput" value="{{searchText}}"/>
+    <button class="search-btn" bindtap="searchCertificate">查询</button>
+  </view>
+
+  <view class="result" wx:if="{{certificate}}">
+    <view class="certificate-info">
+      <text class="info-title">证书信息：</text>
+      <view class="info-item">
+        <text class="label">证书编号：</text>
+        <text class="value">{{certificate.certificateNumber}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">姓名：</text>
+        <text class="value">{{certificate.name}}</text>
+      </view>
+      <view class="info-item">
+        <text class="label">性别：</text>
+        <text class="value">{{certificate.gender}}</text>
+      </view>
+      <view class="info-item" wx:if="{{certificate.certificateUrl}}">
+        <text class="label">证书电子版：</text>
+        <button class="view-btn" bindtap="viewCertificate">查看证书</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="no-result" wx:if="{{showNoResult}}">
+    <text>未找到该证书编号</text>
+  </view>
+
+
+</view>

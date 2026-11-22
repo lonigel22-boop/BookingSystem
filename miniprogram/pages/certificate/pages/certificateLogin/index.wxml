@@ -1,0 +1,10 @@
+<view class="container">
+  <view class="header">
+    <text class="title">后台管理登录</text>
+  </view>
+  
+  <view class="login-box">
+    <input type="password" class="input-field" placeholder="请输入管理员密码" bindinput="onPasswordInput" value="{{password}}"/>
+    <button class="primary-btn" bindtap="login">登录</button>
+  </view>
+</view>

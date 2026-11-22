@@ -1,0 +1,24 @@
+<view class="courseManagment-container">
+  <view wx:for="{{courses}}" wx:key="_id">
+    <view class="courseManagment-content-course-item">
+      <view class="courseManagment-content-course-item-title">{{item.title}}</view>
+      <view>人数：{{item.numbers}} 人</view>
+      <view>目标人群：{{item.target}}</view>
+      <view>年龄：{{item.age}} 岁</view>
+      <view wx:if="{{item.require}}">要求：{{item.require}} </view>
+      <view>课时：{{item.periods}}期 {{item.pitch_number}}节*{{item.minute}} 分钟</view>
+      <view>学生姓名：{{item.studentName}}</view>
+      <view>费用：
+      {{item.expense_level_1 ? item.expense_level_1+'元' : '-'+'元'}}
+      {{item.expense_level_2 ? (' / ' + item.expense_level_2 + '元') : '-'+'元'}}
+      {{item.expense_level_3 ? (' / ' + item.expense_level_3 + '元') : '-'+'元'}}</view>
+      <view class="courseManagment-content-course-item-handle">
+        <van-button class="courseManagment-content-course-item-handle-btn" color="#ff0000" size="small" round data-data="{{ item }}" bind:tap="deleteCourse">删除</van-button>
+        <van-button class="courseManagment-content-course-item-handle-btn" color="#3f6f70" size="small" round data-data="{{ item }}" bind:tap="editCourse">编辑</van-button>
+      </view>
+    </view>
+  </view>
+  <view class="courseManagment-container-add">
+    <van-button type="primary" block bind:tap="addCourse">添加课程</van-button>
+  </view>
+</view>

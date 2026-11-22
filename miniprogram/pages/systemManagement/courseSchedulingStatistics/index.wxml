@@ -1,0 +1,24 @@
+<view class="courseSchedulingStatistics">
+    <van-dropdown-menu>
+      <van-dropdown-item value="{{ shopValue }}" options="{{ shopList }}" bind:change="dropdownChange" bind:open="dropdownOpen" bind:close="dropdownClose" />
+      <van-field
+        model:value="{{ date }}"
+        center
+        readonly
+        label=""
+        placeholder="请选择日期"
+        border="{{ false }}"
+        use-button-slot
+      >
+        <van-button slot="button" size="small" class="primary" color="#3f6f70" bind:tap="pickerDisplay">
+          选择日期
+        </van-button>
+      </van-field>
+    </van-dropdown-menu>
+
+    <date-time-picker show="{{ showPicker }}" bind:currentTime="currentTime" bind:closePopup="closePopup" />
+    
+
+    <ec-canvas class="courseSchedulingStatistics-ec-canvas" wx:if="{{ canvasShow }}" id="mychart-statistics" canvas-id="mychart-bar"></ec-canvas>
+  
+</view>

@@ -1,0 +1,13 @@
+<van-popup
+  show="{{ showPicker }}"
+  position="bottom"
+>
+  <van-datetime-picker
+    type="date"
+    value="{{ currentTime }}"
+    bind:input="pickerInput"
+    bind:cancel="popupClose"
+    bind:confirm="popupConfirm"
+    min-date="{{ minDate }}"
+  />
+</van-popup>

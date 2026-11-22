@@ -1,0 +1,191 @@
+<view class="page">
+
+  <!-- 顶部标题 -->
+  <view class="hd">
+    <view class="hd-title">KSST 演唱技能树</view>
+    <view class="hd-sub">邝氏演唱演讲训练体系 · 每节课点亮一个技能点 · 进度存在本机</view>
+  </view>
+
+  <!-- 榜单昵称（师生一致，谁都可以改名上榜） -->
+  <view class="mebar">
+    <view class="mebar-l">榜单昵称 <text class="mebar-name">{{myName || '未设置'}}</text></view>
+    <view class="mebar-btn" bindtap="openName">改名</view>
+  </view>
+
+  <!-- 排行榜 -->
+  <view class="board">
+    <view class="lbhead">
+      <view class="lbtitle">🏆 学习榜</view>
+      <view class="lbsub">每点亮 1 节课 +1 分，撤销 -1 分</view>
+      <view class="lbbtns"><view class="lbmini" bindtap="refreshBoard">↻ 刷新</view></view>
+    </view>
+
+    <!-- 师生一致的榜单：Top10 横滑 + 我的排名条 -->
+    <scroll-view scroll-x class="lbrow" wx:if="{{boardTop.length > 0}}">
+      <view class="lbcard {{item.me ? 'me' : ''}} r{{item.rank}}" wx:for="{{boardTop}}" wx:key="k">
+        <view class="lbrank">{{item.medal}} 第 {{item.rank}} 名</view>
+        <view class="lbname">{{item.name}}{{item.me ? ' · 我' : ''}}</view>
+        <view class="lbscore">{{item.score}} 分</view>
+      </view>
+    </scroll-view>
+    <view class="lbempty" wx:else>{{boardLoading ? '正在读取榜单…' : '还没有人上榜，来当第一名 🌱'}}</view>
+    <view class="lbme">{{boardMeText}}</view>
+    <view class="lberr" wx:if="{{boardErr}}">{{boardErr}}</view>
+  </view>
+
+  <!-- 统计 -->
+  <view class="stats">
+    <view class="stat"><text class="sl">总技能点</text><text class="sv">{{statTotal}}</text></view>
+    <view class="stat"><text class="sl">已点亮</text><text class="sv green">{{statLit}}</text></view>
+    <view class="stat"><text class="sl">通关成就</text><text class="sv">{{statExam}}</text></view>
+    <view class="stat"><text class="sl">路线</text><text class="sv route">气息→初级→中级→高级</text></view>
+  </view>
+  <view class="progwrap"><view class="progbar" style="width:{{prog}}%">{{prog}}%</view></view>
+
+  <!-- 筛选条 -->
+  <scroll-view scroll-x class="toolbar">
+    <view class="fbtn {{filter === item.k ? 'on' : ''}}" wx:for="{{filters}}" wx:key="k"
+          data-k="{{item.k}}" bindtap="onFilter">{{item.t}}</view>
+    <view class="fbtn reset" bindtap="openConfirm">🗑 清空进度</view>
+  </scroll-view>
+
+  <!-- 技能树 -->
+  <view class="tree">
+    <view class="branch" wx:for="{{visibleBranches}}" wx:for-item="b" wx:key="id" style="border-left:3px solid {{b.c}}">
+      <view class="bhead">
+        <view class="bicon" style="background:{{b.cA16}};border-color:{{b.cA35}}">{{b.icon}}</view>
+        <view class="btxt">
+          <view class="bt">{{b.t}}</view>
+          <view class="bs">{{b.sub}}</view>
+        </view>
+        <view class="bprog">
+          <text class="bprogt">{{b.lit}}/{{b.total}}</text>
+          <view class="bprogbar"><view class="bprogfill" style="width:{{b.pct}}%;background:{{b.c}}"></view></view>
+        </view>
+      </view>
+      <view class="nodes">
+        <view class="node {{n.cls}}" style="{{n.nodeStyle}}" wx:for="{{b.nodes}}" wx:for-item="n" wx:key="id"
+              data-id="{{n.id}}" bindtap="onCardTap">
+          <view class="nh">
+            <text class="nt">{{n.n}}</text>
+            <text class="badge {{n.badgeType}}" wx:if="{{n.badge}}">{{n.badge}}</text>
+          </view>
+          <view class="none">{{n.one}}</view>
+          <view class="lock" wx:if="{{n.lock}}">{{n.lock}}</view>
+          <view class="ratio" wx:if="{{n.hasRatio}}">
+            <view class="rbar">
+              <view class="ra" style="width:{{n.ratioA}}%;background:{{n.col}}"></view>
+              <view class="rb" style="width:{{n.ratioB}}%"></view>
+            </view>
+            <view class="rmeta">{{n.ratioText}}</view>
+          </view>
+          <view class="meta"><text class="reg" style="border-left-color:{{n.col}}">{{n.reg}}</text></view>
+          <view class="acts">
+            <view class="act {{n.btnCls}}" style="{{n.btnStyle}}" data-id="{{n.id}}" data-act="{{n.btnAct}}" catchtap="onNodeAct">{{n.btnText}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="foot">
+    <view>气:声比例沿用图⑤口径；身体部位能量对应图①参与标记，均为教学化表达。</view>
+    <view>规则：初级线点满 → 初级考核 → 中级选 3 种风格 → 中级考核 → 三选一专攻 → 高级考核 → 隐藏果实全开。</view>
+  </view>
+
+  <!-- 详情浮层（支持往下滑退出） -->
+  <view class="detailbox {{detailShow ? 'show' : ''}} {{detailDragging ? 'dragging' : ''}}"
+        style="{{detailDragStyle}}"
+        bindtouchstart="onDTouchStart" bindtouchmove="onDTouchMove"
+        bindtouchend="onDTouchEnd" bindtouchcancel="onDTouchEnd">
+    <view class="dtopbar">
+      <view class="dgrab"><view class="dgrabbar"></view></view>
+      <view class="dclose" catchtap="closeDetail">✕ 关闭</view>
+    </view>
+    <scroll-view scroll-y class="detail" bindscroll="onDetailScroll" scroll-top="{{detailScrollTop}}">
+      <block wx:if="{{d}}">
+        <view class="dhead">
+          <view class="dicon" style="background:{{d.colA18}};border-color:{{d.colA35}}">{{d.icon}}</view>
+          <view class="dheadtxt">
+            <view class="dtitle">{{d.n}}</view>
+            <view class="dsub">{{d.one}}</view>
+          </view>
+        </view>
+        <view class="df"><view class="fl">🎯 本课学什么</view><view class="fp">{{d.doe}}</view></view>
+        <view class="df"><view class="fl">✨ 点亮后习得</view><view class="fp">{{d.unlock}}</view></view>
+        <view class="dfull"><view class="fl">🎤 老师说</view><view class="fp">{{d.reg}}</view></view>
+        <view class="dfull" wx:if="{{d.hasRatio}}">
+          <view class="rbar">
+            <view class="ra" style="width:{{d.ratioA}}%;background:{{d.col}}"></view>
+            <view class="rb" style="width:{{d.ratioB}}%"></view>
+          </view>
+          <view class="rmeta">{{d.ratioText}}</view>
+        </view>
+        <view class="dfull">
+          <view class="fl">🧬 参与部位</view>
+          <view class="chips">
+            <text class="chip" wx:for="{{d.ana}}" wx:for-item="a" wx:key="*this"
+                  style="border-color:{{d.colA35}};color:{{d.col}}">{{a}}</text>
+          </view>
+        </view>
+        <view class="dlock" wx:if="{{d.lock}}">{{d.lock}}</view>
+      </block>
+    </scroll-view>
+    <view class="dfoot">
+      <view class="dact {{d.btnCls}}" style="{{d.btnStyle}}" wx:if="{{d}}" data-act="{{d.btnAct}}" bindtap="onDetailAct">{{d.btnText}}</view>
+      <view class="dact sec" wx:if="{{d.extraBtn}}" data-act="{{d.extraBtn.act}}" bindtap="onDetailAct">{{d.extraBtn.text}}</view>
+    </view>
+  </view>
+
+  <!-- 答题弹层 -->
+  <view class="mask" wx:if="{{quizShow}}" bindtap="closeQuiz">
+    <view class="quiz" catchtap="noop">
+      <view class="qhead">
+        <text class="qtag" style="color:{{quizCol}};border-color:{{quizColA40}};background:{{quizColA12}}">{{quizTag}}</text>
+        <text class="qclose" catchtap="closeQuiz">×</text>
+      </view>
+      <view class="qtitle">{{quizTitle}}</view>
+      <view class="qlabel">{{quizLabel}}</view>
+      <view class="qstem">{{quizStem}}</view>
+      <view class="qopts">
+        <view class="qopt {{item.cls}}" wx:for="{{quizOpts}}" wx:key="k" data-idx="{{index}}" bindtap="onOptTap">
+          <view class="qkey">{{item.key}}</view>
+          <view class="qtext">{{item.text}}</view>
+        </view>
+      </view>
+      <view class="qfeedback {{quizFeedbackType}}" wx:if="{{quizFeedback}}">{{quizFeedback}}</view>
+      <view class="qpending" wx:if="{{quizPending}}">📝 该课程暂无正式题库（知识 / 技术 / 态度三关待定），点任意选项即可直接点亮</view>
+      <view class="qbtnrow"><view class="qbtn ghost" catchtap="closeQuiz">取消</view></view>
+    </view>
+  </view>
+
+  <!-- 改名弹层 -->
+  <view class="mask" wx:if="{{nameShow}}" bindtap="closeName">
+    <view class="join" catchtap="noop">
+      <view class="jtitle">🏆 设置榜单昵称</view>
+      <view class="jdesc">排行榜上显示的就是这个名字，随时可改。改名后会立刻同步到云端榜单。</view>
+      <input class="jinput" value="{{nameInput}}" maxlength="16" placeholder="2–16 字，例如：小邝同学"
+             bindinput="onNameInput" confirm-type="done" />
+      <view class="jerr">{{nameErr}}</view>
+      <view class="jbtns">
+        <view class="jbtn" bindtap="saveName">保存并同步</view>
+        <view class="jbtn sec" bindtap="closeName">暂不修改</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 清空进度确认 -->
+  <view class="mask" wx:if="{{confirmShow}}" bindtap="closeConfirm">
+    <view class="confirm" catchtap="noop">
+      <view class="ctitle">🗑 清空进度？</view>
+      <view class="cdesc">将清除本机所有已点亮技能点、选学、专攻与「曾点亮过」记录，榜单分数同步归零。清空后所有课程都需重新答题，此操作不可撤销。</view>
+      <view class="cbtns">
+        <view class="cbtn cancel" bindtap="closeConfirm">取消</view>
+        <view class="cbtn ok" bindtap="doReset">确认清空</view>
+      </view>
+    </view>
+  </view>
+
+  <!-- toast -->
+  <view class="toast {{toastShow ? 'in' : ''}}" wx:if="{{toastShow}}" style="border-color:{{toastCol}}">{{toastMsg}}</view>
+</view>

@@ -1,0 +1,87 @@
+<view class="courseManagmentHandle-content">
+  <van-cell-group>
+    <van-field
+      model:value="{{ title }}"
+      label="课程名称："
+      placeholder="请输入课程名称"
+      border="{{ false }}"
+      title-width="130"
+      clearable
+    />
+    <van-field
+      model:value="{{ target }}"
+      label="目标人群："
+      placeholder="请输入目标人群"
+      border="{{ false }}"
+      title-width="130"
+      clearable
+    />
+    <van-field
+      model:value="{{ age }}"
+      label="年龄："
+      placeholder="请输入年龄"
+      border="{{ false }}"
+      title-width="130"
+      clearable
+    />
+    <van-field
+      model:value="{{ require }}"
+      label="要求："
+      placeholder="请输入要求"
+      border="{{ false }}"
+      title-width="130"
+      clearable
+    />
+    <van-field
+      model:value="{{ periods }}"
+      label="课时期数："
+      placeholder="请输入课时期数"
+      border="{{ false }}"
+      title-width="130"
+      clearable
+    />
+    <van-field
+      model:value="{{ pitch_number }}"
+      label="课时节数："
+      placeholder="请输入课时节数"
+      border="{{ false }}"
+      title-width="130"
+      clearable
+    />
+    <van-field
+      model:value="{{ minute }}"
+      label="课时分钟数："
+      placeholder="请输入课时分钟数"
+      border="{{ false }}"
+      title-width="130"
+      clearable
+    />
+    <van-field
+      model:value="{{ expense_level_1 }}"
+      label="课时费用（初级）："
+      placeholder="请输入课时费用（初级）"
+      border="{{ false }}"
+      title-width="130"
+      clearable
+    />
+    <van-field
+      model:value="{{ expense_level_2 }}"
+      label="课时费用（中级）："
+      placeholder="请输入课时费用（中级）"
+      border="{{ false }}"
+      title-width="130"
+      clearable
+    />
+    <van-field
+      model:value="{{ expense_level_3 }}"
+      label="课时费用（高级）："
+      placeholder="请输入课时费用（高级）"
+      border="{{ false }}"
+      title-width="130"
+      clearable
+    />
+  </van-cell-group>
+  <view class="courseManagmentHandle-content-btn">
+    <van-button type="primary" block bind:tap="handleCourse">保存</van-button>
+  </view>
+</view>

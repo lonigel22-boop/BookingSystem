@@ -1,0 +1,13 @@
+<view class="container">
+  <van-calendar show="{{true}}" poppable="{{false}}" show-confirm="{{false}}" show-title="{{false}}" max-date="{{maxDate}}" min-date="{{minDate}}" color="#3f6f70" class="container-calender" type="single" formatter="{{ formatter }}" row-height="{{rowHeight}}" data-item="{{courseData}}" bind:select="lookMore" />
+
+  <van-dialog
+    use-slot
+    title="课程安排"
+    show="{{ dialogShow }}"
+    custom-class="index-dialog-class"
+    theme="round-button"
+  >
+    <view class="index-dialog-class-view" wx:for="{{ dialogMessage }}" wx:key="index">{{ item.startTime }}  {{ item.shopName }}  {{ item.room }}</view>
+  </van-dialog>
+</view>

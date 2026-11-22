@@ -1,0 +1,98 @@
+<view class="myClassSchedule-container">
+
+  <view class="myClassSchedule-container-search">
+    <van-field
+      model:value="{{ userName }}"
+      center
+      clearable
+      label=""
+      placeholder="请输入昵称或者姓名"
+      border="{{ false }}"
+      use-button-slot
+    >
+      <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="getResertUsers">
+        搜索
+      </van-button>
+    </van-field>
+  </view>
+
+  <scroll-view style="height: 100%" scroll-y="true" 	lower-threshold ='100' bindscrolltolower="getUsers">
+    <van-collapse value="{{ activeNames }}" bind:change="onChange"  wx:for="{{ userListResult }}" wx:key="_id" accordion >
+      <van-swipe-cell right-width="{{ 120 }}" data-item="{{item}}">
+        <van-collapse-item class="{{item.isTop ? 'top-student-name' : ''}}" title="{{ item.name ? item.name : item.nickName }}" name="{{item._id}}">
+
+        <van-collapse value="{{ activeCourses }}" bind:change="onChangeCourse"  wx:for="{{  item.course.course }}" wx:for-item="_item" wx:for-index="_index" wx:key="_id" accordion>
+          <van-collapse-item title="{{ _item.title }}" name="{{_index}}">
+
+            <van-swipe-cell right-width="{{ 200 }}"  wx:for="{{_item.currentCourse}}" wx:for-item="__item" wx:for-index="__index" wx:key="_id">
+              <van-cell-group>
+                <van-cell title="" value="{{__item.startTimeFormat}}" label="{{__item.note ? __item.note : ''}}" border="{{ false }}" wx:if="{{__item.note}}">
+                  <view slot="title">
+                    <text decode="{{true}}">第{{__index + 1}}节&nbsp;&nbsp;&nbsp;&nbsp;{{__item.lessonTitle}}</text>
+                  </view>
+                </van-cell>
+                <van-cell title="" value="{{__item.startTimeFormat}}" border="{{ false }}" wx:else>
+                  <view slot="title">
+                    <text decode="{{true}}">第{{__index + 1}}节&nbsp;&nbsp;&nbsp;&nbsp;{{__item.lessonTitle}}</text>
+                  </view>
+                </van-cell>
+              </van-cell-group>
+              <view slot="right" class="myClassSchedule-container-list-swipe">
+                <van-button class="myClassSchedule-container-list-swipe-btn" color="#ff0000" size="small" data-data="{{ __item }}" bind:tap="deleteMyCourse">取消</van-button>
+                <van-button class="myClassSchedule-container-list-swipe-btn" color="#3f6f70" size="small" data-data="{{ __item }}" bind:tap="{{ __item.finished ? 'editMyCourse' : 'editMyCourse' }}">修改</van-button>
+                <van-button class="myClassSchedule-container-list-swipe-btn" color="#3f6f70" size="small" data-data="{{ __item }}" bind:tap="showNoteDialog">备注</van-button>
+              </view>
+            </van-swipe-cell>
+
+            <view class="myClassSchedule-container-list-btn">
+              <van-button class="content-course-item-btn" color="#3f6f70" size="small" data-data="{{ _item }}" data-student="{{ item }}" bind:tap="toAppointment">预约</van-button>
+              <!-- <van-button class="content-course-item-btn" color="#3f6f70" size="small" data-data="{{ _item }}" data-student="{{ item }}" >结课</van-button> -->
+            </view>
+          </van-collapse-item>
+        </van-collapse>
+      </van-collapse-item>
+        <view slot="right" class="student-swipe-btns">
+          <van-button 
+            class="student-swipe-btn" 
+            color="{{item.isTop ? '#ff0000' : '#3f6f70'}}" 
+            size="small" 
+            bind:tap="toggleTop" 
+            data-item="{{item}}"
+          >
+            {{item.isTop ? '取消置顶' : '置顶'}}
+          </van-button>
+        </view>
+      </van-swipe-cell>
+    </van-collapse>
+    <view class="myClassSchedule-containe-hint" hidden="{{hasMore}}">没有更多数据</view>
+  </scroll-view>
+
+  <date-time-picker show="{{ showStartPicker }}" bind:currentTime="currentTime" bind:closePopup="closePopup" />
+  <date-time-picker show="{{ showEndPicker }}"  minDate="{{ minEndDate }}" bind:currentTime="currentEndTime" bind:closePopup="closeEndPopup" />
+
+  <van-dialog
+    use-slot
+    title="课程备注"
+    show="{{ showNoteDialog }}"
+    show-cancel-button
+    confirm-button-color="#3f6f70"
+    bind:confirm="saveNote"
+    bind:close="closeNoteDialog"
+  >
+    <van-field
+      model:value="{{ lessonTitle }}"
+      placeholder="请输入课节标题"
+      border="{{ false }}"
+      custom-style="width: 90%; margin: 20rpx auto;"
+    />
+    <van-field
+      model:value="{{ noteContent }}"
+      type="textarea"
+      placeholder="请输入备注内容"
+      autosize="{{ { minHeight: 120, maxHeight: 120 } }}"
+      border="{{ false }}"
+      custom-style="width: 90%; margin: 20rpx auto;"
+    />
+  </van-dialog>
+  
+</view>

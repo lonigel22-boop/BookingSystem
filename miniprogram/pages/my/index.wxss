@@ -1,0 +1,22 @@
+.container{
+  padding: 20rpx 0;
+}
+
+.container-info{
+  text-align: center;
+}
+
+.container-info-img{
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  box-shadow: 0 0 40rpx #cdcdcd;
+}
+
+.container-info-text{
+  padding: 20rpx;
+}
+
+.container-list{
+  width: 100%;
+}

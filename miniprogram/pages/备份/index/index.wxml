@@ -1,0 +1,51 @@
+<view class="container">
+  <view class="content-header">
+    <image 
+      class="container-header-img"
+      src="../../images/wao.png"
+    />
+    <view class="container-header-shop">
+      <van-dropdown-menu>
+        <van-dropdown-item value="{{ shopValue }}" options="{{ shopList }}" bind:change="dropdownChange" />
+      </van-dropdown-menu>
+      <view class="container-header-info">
+        <view class="container-header-info-text">营业时间：{{ shopList[shopValue].time }} </view>
+        <view class="container-header-info-text">地址：{{ shopList[shopValue].address }} </view>
+        <view class="container-header-info-text">联系电话：{{ shopList[shopValue].phone }} <image data-item="{{shopList[shopValue].phone}}" bind:tap="makePhoneCall" src="../../images/phone.svg" /></view>
+      </view>
+    </view>
+  </view>
+
+
+  <view class="container-teacher">
+    <view>音乐教师</view>
+  </view>
+  <view class="container-swiper">
+    <swiper indicator-dots="{{ true }}"
+      autoplay="{{ true }}" interval="{{ 4000 }}" duration="{{ 800 }}">
+      <block wx:for="{{ teachers }}" wx:key="*this">
+        <swiper-item class="container-swiper-item">
+          <image 
+            class="container-swiper-item-img"
+            src="{{ item.avatarUrl }}"
+          />
+          <view class="container-swiper-item-text">
+            <view class="container-swiper-item-text-item">姓名：{{ item.name }}</view>
+            <view class="container-swiper-item-text-item">职位：{{ item.position }}</view>
+            <view class="container-swiper-item-text-item container-swiper-item-text-overflow">介绍：{{ item.introduce }}</view>
+          </view>
+        </swiper-item>
+      </block>
+    </swiper>
+  </view>
+
+  <van-dialog
+    use-slot
+    title="课程提醒"
+    show="{{ dialogShow }}"
+    custom-class="index-dialog-class"
+    theme="round-button"
+  >
+    <view class="index-dialog-class-view" wx:for="{{ dialogMessage }}" wx:key="index">{{ item.startTime }}  {{ item.shopName }}  {{ item.room }}</view>
+  </van-dialog>
+</view>

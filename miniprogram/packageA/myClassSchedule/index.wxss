@@ -1,0 +1,23 @@
+.myClassSchedule-container{
+  height: 100%;
+}
+
+.myClassSchedule-containe-hint{
+  padding: 10rpx;
+  text-align: center;
+  color: #6b6b6b;
+}
+
+.myClassSchedule-container-list-btn{
+  display: flex;
+  justify-content: center;
+  padding: 20rpx;
+}
+
+.myClassSchedule-container-list-swipe{
+  padding: 20rpx 0;
+}
+
+.myClassSchedule-container-list-swipe-btn+.appointmentCourse-list-swipe-btn{
+  margin-left: 10rpx;
+}

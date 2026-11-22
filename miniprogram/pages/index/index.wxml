@@ -1,0 +1,92 @@
+<view class="container"> 
+  <!-- 去掉校区相关内容 --> 
+ 
+  <!-- 保留my页面的个人信息部分 --> 
+  <view class="container-info" bind:tap="myInfo"> 
+    <image class="container-info-img" src="{{avatarUrl}}"/> 
+    <view class="container-info-text">{{name? name : nickName? nickName : '微信用户' }}</view> 
+  </view> 
+ 
+  <view class="container-list"> 
+    <van-cell 
+      is-link 
+      title="证书系统" 
+      link-type="navigateTo" 
+      url="/pages/certificate/pages/certificate/index"
+      wx:if="{{userInfo.isTeacher}}"/> 
+
+    <van-cell 
+      is-link 
+      title="我的学生" 
+      link-type="navigateTo" 
+      url="/pages/systemManagement/myStudent/index" 
+      wx:if="{{userInfo.isTeacher}}"/> 
+    <van-cell 
+      is-link 
+      title="预约课程" 
+      link-type="navigateTo" 
+      url="/pages/systemManagement/myClass/index" 
+      wx:if="{{userInfo.isTeacher}}"/> 
+    <van-cell 
+      is-link 
+      title="我的课表" 
+      link-type="navigateTo" 
+      url="/pages/systemManagement/calendar/index" 
+      wx:if="{{userInfo.isTeacher}}"/>
+    <van-cell 
+      is-link 
+      title="房间统计" 
+      link-type="navigateTo" 
+      url="/pages/systemManagement/courseSchedulingStatistics/index"
+      wx:if="{{userInfo.isTeacher}}"/> 
+    <van-cell 
+      is-link 
+      title="腰带系统" 
+      link-type="navigateTo" 
+      url="/pages/beltsystem/index"
+      wx:if="{{userInfo.isTeacher}}"/> 
+      <van-cell 
+      is-link 
+      title="技能树" 
+      link-type="navigateTo" 
+      url="/pages/tree/index"/>
+  </view> 
+
+  <!-- 去掉音乐教师相关内容 --> 
+  <view class="container-swiper"> 
+    <swiper indicator-dots="{{true}}" 
+      autoplay="{{true}}" interval="{{4000}}" duration="{{800}}"> 
+      <block wx:for="{{teachers}}" wx:key="*this"> 
+        <swiper-item class="container-swiper-item"> 
+          <image 
+            class="container-swiper-item-img" 
+            src="{{item.avatarUrl}}"/> 
+          <view class="container-swiper-item-text"> 
+            <view class="container-swiper-item-text-item">姓名：{{item.name}}</view> 
+            <view class="container-swiper-item-text-item">职位：{{item.position}}</view> 
+            <view class="container-swiper-item-text-item container-swiper-item-text-overflow">介绍：{{item.introduce}}</view> 
+          </view> 
+        </swiper-item> 
+      </block> 
+    </swiper> 
+  </view> 
+
+  <!-- 课程详情区域 -->
+  <view class="course-detail-section" wx:if="{{ todayCourses.length > 0 }}">
+    <view class="day-detail-header">{{ currentDate }} 课程安排</view>
+    <view class="day-detail-content">
+      <block>
+        <view class="course-item" wx:for="{{ todayCourses }}" wx:key="id">
+          <view class="course-time-section">
+            <view class="course-time">{{ item.startTime }}</view>
+            <view class="course-student">{{ item.studentName }}</view>
+          </view>
+          <view class="course-info">
+            <view class="course-title">{{ item.courseName }}</view>
+            <view class="course-location">{{ item.location }}</view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

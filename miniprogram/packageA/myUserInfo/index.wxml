@@ -1,0 +1,28 @@
+<view class="user-info">
+	<view class="item">
+		<image class="item-img" src="{{avatarUrl}}" />
+		<view><button class="item-header" type="primary" open-type="chooseAvatar" bindchooseavatar="getchooseAvatar" size="mini">修改头像</button></view>
+	</view>
+	
+	<form catchsubmit="formSubmit">
+		<view class="item">
+			<view>昵称</view>
+			<input class="item-input" name="nickname" type="nickname" class="calculate-input" placeholder="请输入昵称" value="{{ nickName }}" />
+		</view>
+    <view class="item">
+			<view>姓名</view>
+			<input class="item-input" name="name" class="calculate-input" placeholder="请输入姓名" value="{{ name }}" />
+		</view>
+    <view class="item">
+			<view>职位</view>
+			<input class="item-input" name="position" class="calculate-input" placeholder="请输入职位" value="{{ position }}" />
+		</view>
+    <view class="item">
+			<view>介绍</view>
+			<textarea class="item-input" name="introduce" class="calculate-input" placeholder="请输入介绍" value="{{ introduce }}" maxlength="5000" />
+		</view>
+		<button type="primary" class="save" formType="submit" size="mini">保存</button>
+	</form>
+	
+	<!-- <button class="save" type="primary" bind:tap="submit">保存</button> -->
+</view>

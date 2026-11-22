@@ -1,0 +1,33 @@
+.content{
+  padding: 20rpx;
+  background:#1c1c1c;
+  height: 100%;
+  overflow-y: scroll;
+}
+.content-course{
+  padding-top: 20rpx;
+}
+.content-course-item{
+  display: flex;
+  flex-direction: column;
+  padding: 20rpx;
+  font-size: 26rpx;
+  color: #6c6c6d;
+  background: #262626;
+  margin-bottom: 20rpx;
+  position: relative;
+}
+.content-course-item+.content-course-item{
+  margin-bottom: 20rpx;
+}
+.content-course-item view{
+  padding: 4rpx;
+}
+.content-course-item-title{
+  color: #fff;
+}
+.content-course-item-btn{
+  position: absolute;
+  right: 20rpx;
+  bottom: 20rpx;
+}

@@ -1,0 +1,51 @@
+<view class="container">
+  <view class="teacher-list">
+    <view class="section-title">教师列表</view>
+    <view class="teacher-items">
+      <block wx:for="{{teachers}}" wx:key="_id">
+        <view class="teacher-item {{selectedTeacher._id === item._id ? 'selected' : ''}}" 
+              bindtap="onTeacherSelect" 
+              data-teacher="{{item}}">
+          <image class="avatar" src="{{item.avatarUrl || '/images/wao.png'}}" mode="aspectFill"></image>
+          <view class="info">
+            <view class="name">{{item.name || item.nickName}}</view>
+            <view class="position">{{item.position || '讲师'}}</view>
+          </view>
+        </view>
+      </block>
+    </view>
+  </view>
+
+  <view class="export-section">
+    <view class="section-title">课时导出</view>
+    <view class="export-content">
+      <view class="date-picker">
+        <picker mode="date" fields="month" value="{{selectedDate}}" bindchange="onDateChange">
+          <view class="picker-content">
+            <text>选择年月：</text>
+            <text class="date-text">{{selectedDate || '请选择'}}</text>
+          </view>
+        </picker>
+      </view>
+      <button class="export-btn" bindtap="exportClassHours" disabled="{{!selectedTeacher || !selectedDate}}">
+        导出课时
+      </button>
+    </view>
+  </view>
+
+  <view class="course-list" wx:if="{{courseList && courseList.length}}">
+    <view class="section-title">课程列表</view>
+    <view class="course-items">
+      <view class="course-item" wx:for="{{courseList}}" wx:key="index">
+        <view class="course-title">{{item.title}}</view>
+        <view class="course-info">
+          <view class="course-time time-highlight">{{item.startTime}}</view>
+          <view class="course-details">
+            <view class="course-location text-right">{{item.location}}</view>
+            <view class="course-student text-right">{{item.studentName}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

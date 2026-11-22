@@ -1,0 +1,56 @@
+.teacher{
+  padding: 20rpx 10rpx;
+}
+.teacher-box{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* justify-content: center; */
+  align-items: center;
+}
+.teacher-box-img{
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  box-shadow: 0rpx 0rpx 20rpx 10rpx #e0e0e0;
+}
+.teacher-box-txt{
+  font-size: 24rpx;
+  color: #000;
+  padding: 20rpx 20rpx 0;
+}
+
+.teacher-schedule-title{
+  margin-top: 10rpx;
+  padding-left: 10rpx;
+  border-left: solid 5px rgb(13, 134, 49);
+  color: #000;
+}
+
+.teacher-schedule-time{
+  font-size: 26rpx;
+  padding: 20rpx;
+}
+
+.teacher-schedule-title-btn{
+  color: #f00;
+}
+
+.teacher-schedule-content-grid-item{
+  background: #fff;
+  padding: 20rpx 10rpx;
+}
+
+.teacher-schedule-content-grid-item .item-item {
+  font-size: 28rpx;
+  color: #646566;
+  padding: 10rpx 20rpx;
+  display: flex;
+  justify-content: space-between;
+}
+
+.teacher-schedule-btn{
+  padding: 20rpx;
+  display: flex;
+  justify-content: space-between;
+}

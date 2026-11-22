@@ -1,0 +1,28 @@
+<view class="appointmentCourse">
+
+  <view class="appointmentCourse-list">
+    <van-collapse value="{{ activeNames }}" bind:change="onChange"  wx:for="{{ courseList }}" wx:key="_id" accordion>
+      <van-collapse-item title="{{item.title}}" name="{{index}}">
+        <van-cell-group>
+          <view wx:if="{{item.myCourse && item.myCourse.length}}">
+            <van-swipe-cell right-width="{{ 0 }}" wx:for="{{item.myCourse}}" wx:key="_id" wx:for-item="re">
+              <van-cell title="教师：{{re.teacherName}}" value="{{re.startTime}}" />
+              <view slot="right" class="appointmentCourse-list-swipe">
+                <van-button class="appointmentCourse-list-swipe-btn" color="#ff0000" size="small" data-data="{{re}}" >评价</van-button>
+              </view>
+            </van-swipe-cell>
+          </view>
+          <viw wx:else>
+            <view style="display: flex; flex-direction: column; align-items: center;padding: 80rpx;">
+              <image 
+              style="width: 240rpx; height: 200rpx;"
+              src="../../images/nodata.png"
+              />
+              <view style="color: #cdcdcd; font-size: 32rpx; padding: 20rpx;">还没有课程</view>
+            </view>
+          </viw>
+        </van-cell-group>
+      </van-collapse-item>
+    </van-collapse>
+  </view>
+</view>

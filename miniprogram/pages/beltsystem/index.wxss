@@ -1,0 +1,241 @@
+.container {
+  min-height: 100vh;
+  background: #0f0f1e;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  background: #16213e;
+  border-radius: 16rpx;
+  padding: 18rpx 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.status-dot {
+  width: 18rpx;
+  height: 18rpx;
+  border-radius: 50%;
+  margin-right: 14rpx;
+}
+
+.dot-green {
+  background: #00ff88;
+  box-shadow: 0 0 10rpx #00ff88;
+}
+
+.dot-red {
+  background: #ff4757;
+  box-shadow: 0 0 10rpx #ff4757;
+}
+
+.status-text {
+  flex: 1;
+  font-size: 26rpx;
+  color: #e0e0e0;
+}
+
+.btn-mini {
+  background: #007AFF;
+  color: #fff;
+  font-size: 22rpx;
+  padding: 8rpx 20rpx;
+  border-radius: 8rpx;
+  border: none;
+  line-height: 1.8;
+}
+
+.btn-gray {
+  background: #555b6e;
+}
+
+.force-panel {
+  background: linear-gradient(135deg, #16213e, #1a1a2e);
+  border-radius: 24rpx;
+  padding: 40rpx 24rpx;
+  text-align: center;
+  margin-bottom: 20rpx;
+  border: 1rpx solid #0f3460;
+}
+
+.force-number {
+  font-size: 88rpx;
+  font-weight: bold;
+  color: #00d4ff;
+}
+
+.force-unit {
+  font-size: 28rpx;
+  color: #8892a4;
+  margin-left: 8rpx;
+}
+
+.force-label {
+  display: block;
+  font-size: 22rpx;
+  color: #8892a4;
+  margin-top: 8rpx;
+}
+
+.ctrl-row {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+}
+
+.btn {
+  flex: 1;
+  font-size: 26rpx;
+  padding: 18rpx 0;
+  border-radius: 12rpx;
+  border: none;
+  color: #fff;
+}
+
+.btn-primary {
+  background: #007AFF;
+}
+
+.btn-red {
+  background: #ff4757;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1rpx solid #00d4ff;
+  color: #00d4ff;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-around;
+  font-size: 22rpx;
+  color: #b0b8c4;
+  margin-bottom: 12rpx;
+}
+
+.calib-row {
+  display: flex;
+  justify-content: space-around;
+  background: #16213e;
+  border-radius: 10rpx;
+  padding: 12rpx 8rpx;
+  margin-bottom: 20rpx;
+  font-size: 20rpx;
+  color: #7f8ba3;
+}
+
+.chart-wrapper {
+  background: #1a1a2e;
+  border-radius: 16rpx;
+  padding: 12rpx;
+  border: 1rpx solid #0f3460;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4rpx 8rpx 10rpx;
+}
+
+.chart-title {
+  color: #c8d0e0;
+  font-size: 26rpx;
+}
+
+.chart-sub {
+  color: #6b7590;
+  font-size: 20rpx;
+}
+
+/* ★ 图表主体：左固定列 + 右滚动区，横排不换行 */
+.chart-body {
+  display: flex;
+  align-items: stretch;
+  width: 85vw;
+  margin: 0 auto;
+  background: #11152b;
+  border-radius: 10rpx;
+  overflow: hidden;
+}
+
+/* ★ Y 轴固定列：不在 scroll-view 里，横滑永不移动 */
+.y-axis {
+  position: relative;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 680rpx;
+  background: #11152b;
+  border-right: 1rpx solid #22305a;
+  box-sizing: border-box;
+}
+
+.y-hi,
+.y-unit,
+.y-lo {
+  position: absolute;
+  left: 3px;
+  font-size: 20rpx;
+  line-height: 1.2;
+  color: #8892a4;
+  white-space: nowrap;
+}
+
+.y-hi {
+  top: 24rpx;
+}
+
+.y-unit {
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7590;
+}
+
+.y-lo {
+  bottom: 56rpx;
+}
+
+/* ★ 滚动区占满剩余宽度，去掉原来的 85vw 固定宽 */
+.chart-scroll {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  background: #11152b;
+}
+
+.chart-inner {
+  display: inline-block;
+  vertical-align: top;
+}
+
+.chart {
+  display: block;
+  height: 680rpx;
+  background: #11152b;
+}
+
+.chart-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10rpx 8rpx 4rpx;
+  font-size: 20rpx;
+  color: #6b7590;
+}
+
+.jump {
+  color: #00d4ff;
+}
+
+.tip {
+  text-align: center;
+  padding: 24rpx;
+}
+
+.tip text {
+  font-size: 22rpx;
+  color: #555b6e;
+}

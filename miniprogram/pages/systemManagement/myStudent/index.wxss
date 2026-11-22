@@ -1,0 +1,31 @@
+.teacherManagement-container{
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.teacherManagement-container-handle{
+  padding: 10rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 0 10rpx 10rpx #cdcdcd;
+}
+
+.teacherManagement-container-list{
+  padding: 30rpx 10rpx;
+  height: 100%;
+  overflow-y: scroll;
+}
+
+.teacherManagement-container-list-btn+.teacherManagement-container-list-btn{
+  margin-left: 20rpx;
+}
+
+.teacherManagement-container-popup-list-hint{
+  width: 100%;
+  padding: 10rpx;
+  text-align: center;
+  color: #cdcdcd;
+}

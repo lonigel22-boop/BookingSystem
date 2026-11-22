@@ -1,0 +1,25 @@
+<view class="login-container">
+  <van-cell-group>
+    <van-field
+      model:value="{{ account }}"
+      label="账号"
+      placeholder="请输入账号"
+      border="{{ false }}"
+      error-message='{{ accountError }}'
+      required
+    />
+    <van-field
+      model:value="{{ password }}"
+      type="password"
+      label="密码"
+      placeholder="请输入密码"
+      border="{{ false }}"
+      error-message='{{ passwordError }}'
+      required
+    />
+  </van-cell-group>
+  <view class="login-container-btn">
+    <van-button color="#3f6f70" size="normal" round hairline bindtap="loadByAccount" block>登录</van-button>
+    <van-button class="login-container-btn-edit" color="#3f6f70" size="small" round hairline bindtap="toChange" custom-style="padding: 0 40rpx;">修改密码</van-button>
+  </view>
+</view>

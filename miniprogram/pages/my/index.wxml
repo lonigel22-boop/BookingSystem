@@ -1,0 +1,50 @@
+<view class="container">
+  <view class="container-info" bind:tap="myInfo">
+    <image class="container-info-img" src="{{avatarUrl}}" />
+    <view class="container-info-text">{{name ? name : nickName ? nickName : '微信用户' }}</view>
+  </view>
+  <view class="container-list">
+    <van-cell
+      is-link
+      title="系统后台管理"
+      link-type="navigateTo"
+      url="/pages/systemManagement/login/index"
+      wx:if="{{userInfo.isTeacher}}"
+    />
+    <van-cell
+      is-link
+      title="我的学生"
+      link-type="navigateTo"
+      url="/pages/systemManagement/myStudent/index"
+      wx:if="{{userInfo.isTeacher}}"
+    />
+    <van-cell
+      is-link
+      title="预约课程"
+      link-type="navigateTo"
+      url="/pages/systemManagement/myClass/index" 
+      wx:if="{{userInfo.isTeacher}}"
+    />
+    <van-cell
+      is-link
+      title="课程安排"
+      link-type="navigateTo"
+      url="/pages/systemManagement/courseArrangement/index" 
+      wx:if="{{userInfo.isTeacher}}"
+    />
+    <van-cell
+      is-link
+      title="房间统计"
+      link-type="navigateTo"
+      url="/pages/systemManagement/courseSchedulingStatistics/index" 
+    />
+
+    <view style="display: flex; flex-direction: column; align-items: center;padding: 80rpx;">
+      <image 
+      style="width: 240rpx; height: 200rpx;"
+      src="../../images/best.svg"
+      />
+      <view style="color: #000000; font-size: 32rpx; padding: 20rpx;">今天你是最棒的</view>
+    </view>
+  </view>
+</view>

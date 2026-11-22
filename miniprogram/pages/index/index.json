@@ -1,0 +1,6 @@
+{ 
+  "usingComponents": { 
+  "cloud-tip-modal": "/components/cloudTipModal/index" 
+  }, 
+ "navigationBarTitleText": "哇哦音乐约课系统" 
+}

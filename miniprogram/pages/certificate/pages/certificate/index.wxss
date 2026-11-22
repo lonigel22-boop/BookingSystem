@@ -1,0 +1,99 @@
+.container {
+  padding: 20px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #3f6f70;
+}
+
+.search-box {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  flex: 1;
+  height: 40px;
+  padding: 0 15px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  margin-right: 10px;
+  background-color: #fff;
+}
+
+.search-btn {
+  width: 80px;
+  height: 40px;
+  background-color: #3f6f70;
+  color: white;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.result {
+  margin-top: 20px;
+}
+
+.certificate-info {
+  border: 1px solid #ddd;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.info-title {
+  color: #3f6f70;
+  font-size: 18px;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.info-item {
+  margin-bottom: 10px;
+}
+
+.label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.view-btn {
+  margin-top: 10px;
+  background-color: #3f6f70;
+  color: white;
+  border-radius: 20px;
+  width: 200px;
+}
+
+.no-result {
+  text-align: center;
+  color: red;
+  margin-top: 20px;
+}
+
+.admin-login {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+}
+
+.admin-btn {
+  width: 50px;
+  height: 50px;
+  padding: 0;
+  margin: 0;
+  background-color: #3f6f70;
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

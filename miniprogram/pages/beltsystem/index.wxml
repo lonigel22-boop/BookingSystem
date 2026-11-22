@@ -1,0 +1,75 @@
+<view class="container">
+  <view class="status-bar">
+    <view class="status-dot {{connected ? 'dot-green' : 'dot-red'}}"></view>
+    <text class="status-text">{{connected ? '已连接 KSST_Belt' : '未连接'}}</text>
+    <button class="btn-mini" bindtap="initBLE" wx:if="{{!connected}}">连接腰带</button>
+    <button class="btn-mini btn-gray" bindtap="disconnect" wx:if="{{connected}}">断开</button>
+  </view>
+
+  <view class="force-panel">
+    <text class="force-number">{{currentForce}}</text>
+    <text class="force-unit">{{unit}}</text>
+    <text class="force-label">
+      {{unit == 'kg' ? '点「开始记录」冻结基线 · kg=(R−R0)/b' : '未收到系数 b · 原始计数直出'}}
+    </text>
+  </view>
+
+  <view class="ctrl-row">
+    <button class="btn {{recording ? 'btn-red' : 'btn-primary'}}" bindtap="toggleRecord">
+      {{recording ? '停止记录' : '开始记录'}}
+    </button>
+    <button class="btn btn-outline" bindtap="exportExcel">导出 Excel</button>
+    <button class="btn btn-outline" bindtap="clearData">清空</button>
+  </view>
+
+  <view class="stat-row">
+    <text>点数 {{pointCount}}</text>
+    <text>峰值 {{peak}}</text>
+    <text>均值 {{average}}</text>
+    <text>采样 1s</text>
+  </view>
+
+  <view class="calib-row">
+    <text>本次基线 R0：{{baseline}}</text>
+    <text>系数 b：{{slope}} counts/kg</text>
+  </view>
+
+  <view class="chart-wrapper">
+    <view class="chart-header">
+      <text class="chart-title">{{unit == 'kg' ? '力 - 时间曲线' : '原始计数 - 时间曲线'}}</text>
+      <text class="chart-sub">{{followHint}}</text>
+    </view>
+
+    <!-- ★ 固定 Y 轴列 + 可滚动曲线区，横排 -->
+    <view class="chart-body">
+      <view class="y-axis">
+        <text class="y-hi">{{yHi}}</text>
+        <text class="y-unit">{{yUnit}}</text>
+        <text class="y-lo">{{yLo}}</text>
+      </view>
+
+      <scroll-view
+        id="chartScroll"
+        class="chart-scroll"
+        scroll-x
+        scroll-left="{{scrollLeft}}"
+        scroll-with-animation
+        bindscroll="onChartScroll">
+        <view class="chart-inner" style="width: {{canvasW}}px;">
+          <canvas
+            type="2d"
+            id="forceCanvas"
+            class="chart"
+            style="width: {{canvasW}}px;"></canvas>
+        </view>
+      </scroll-view>
+    </view>
+
+    <view class="chart-footer">
+      <text>X：时间(s) 固定 5s/格 · 4px/s 恒定 · Y：{{unit == 'kg' ? '力值(kg)' : '原始计数 R'}}（左列固定）</text>
+      <text class="jump" bindtap="jumpToLatest">跳到最新 ›</text>
+    </view>
+  </view>
+
+  <view class="tip"><text>新 10kg 件 · b≈366080 · 上电即测无需预热 · 满量程勿超 10kg</text></view>
+</view>

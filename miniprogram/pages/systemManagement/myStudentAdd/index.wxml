@@ -1,0 +1,81 @@
+<view class="teacherManagement-container">
+  <view class="teacherManagement-container-handle">
+    <van-button class="login-container-btn-edit" color="#3f6f70" size="small" round hairline bindtap="addStudent" custom-style="padding: 0 40rpx;">选择学生</van-button>
+  </view>
+  <view class="teacherManagement-container-list">
+    <van-cell-group>
+      <van-cell title="{{item.name ? item.name : item.nickName}}" value="{{item.shopName}}" label="{{item.courseName}}" wx:for="{{ students }}" wx:key="_id">
+        <van-button class="login-container-btn-edit" color="#3f6f70" size="small" round hairline data-item="{{item}}" bindtap="selectCourse" custom-style="padding: 0 40rpx;">选择课程</van-button>
+      </van-cell>
+    </van-cell-group>
+  </view>
+
+  <view class="teacherManagement-container-handle">
+    <van-button color="#3f6f70" size="small" bind:tap="cancle">取消</van-button>
+    <van-button color="#3f6f70" size="small" bind:tap="saveMyStudent">保存</van-button>
+  </view>
+
+  <van-popup
+    show="{{ showUser }}"
+    round
+    position="right"
+    custom-style="height: 100%; width: 70%;"
+    bind:close="onClose"
+    closeable
+  >
+    <view class="teacherManagement-container-popup">
+      <van-field
+        model:value="{{ userName }}"
+        center
+        clearable
+        label=""
+        placeholder="请输入昵称或者姓名"
+        border="{{ false }}"
+        use-button-slot
+      >
+        <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="searchUsers">
+          搜索
+        </van-button>
+      </van-field>
+
+      <view class="teacherManagement-container-popup-list">
+        <scroll-view style="height: calc(100%)" scroll-y="true" 	lower-threshold ='100' bindscrolltolower="getUsers">
+          <van-checkbox-group value="{{ checkUsers }}" bind:change="checkUsersChange">
+            <van-checkbox custom-class="teacherManagement-container-popup-list-checkbox" name="{{item._openid}}" checked-color="#3f6f70" wx:for="{{ userList }}" wx:key="_id">{{ item.name ? item.name : item.nickName }}</van-checkbox>
+          </van-checkbox-group>
+          <view class="teacherManagement-container-popup-list-hint" hidden="{{hasMore}}">没有更多数据</view>
+        </scroll-view>
+      </view>
+
+      <view class="teacherManagement-container-popup-btn">
+        <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="userToTeacher">
+          添加
+        </van-button>
+      </view>
+    </view>
+  </van-popup>
+
+  <van-popup
+    show="{{ showCourse }}"
+    round
+    position="left"
+    custom-style="height: 100%; width: 70%;"
+    bind:close="onCourseClose"
+    closeable
+  >
+    <view class="teacherManagement-container-popup">
+      <view class="teacherManagement-container-popup-list">
+        <van-checkbox-group value="{{ checkCourse }}" bind:change="checkCourseChange">
+          <van-checkbox custom-class="teacherManagement-container-popup-list-checkbox" name="{{item._id}}" checked-color="#3f6f70" wx:for="{{ courses }}" wx:key="_id">{{ item.title }}</van-checkbox>
+        </van-checkbox-group>
+      </view>
+
+      <view class="teacherManagement-container-popup-btn">
+        <van-button slot="button" size="small" type="primary" color="#3f6f70" bind:tap="userToCourse">
+          添加
+        </van-button>
+      </view>
+    </view>
+  </van-popup>
+  
+</view>

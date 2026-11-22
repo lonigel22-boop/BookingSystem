@@ -1,0 +1,30 @@
+.appointmentCourseHandle-handle{
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx;
+}
+
+.appointmentCourseHandle-container-popup{
+  padding-top: 80rpx;
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column; 
+}
+
+.appointmentCourseHandle-container-popup-list{
+  padding: 20rpx 10rpx;
+  box-sizing: border-box;
+  height: 100%;
+  overflow-y: scroll;
+}
+
+.appointmentCourseHandle-container-popup-list-checkbox{
+  padding: 10rpx 0;
+}
+
+.appointmentCourseHandle-container-popup-btn{
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx;
+}

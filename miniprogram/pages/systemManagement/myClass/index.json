@@ -1,0 +1,6 @@
+{
+  "usingComponents": {
+    "date-time-picker": "/components/dateTimePicker/index"
+  },
+  "navigationBarTitleText": "预约课程"
+}

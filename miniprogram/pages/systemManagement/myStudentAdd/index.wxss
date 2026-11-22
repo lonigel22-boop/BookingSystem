@@ -1,0 +1,51 @@
+.teacherManagement-container{
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.teacherManagement-container-handle{
+  padding: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  box-shadow: 0 0 10rpx 10rpx #cdcdcd;
+}
+
+.teacherManagement-container-list{
+  padding: 30rpx 10rpx;
+  height: 100%;
+  overflow-y: scroll;
+}
+
+.teacherManagement-container-popup{
+  padding-top: 80rpx;
+  box-sizing: border-box;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.teacherManagement-container-popup-list{
+  padding: 20rpx 10rpx;
+  box-sizing: border-box;
+  height: 100%;
+  overflow-y: scroll;
+}
+
+.teacherManagement-container-popup-list-hint{
+  width: 100%;
+  padding: 10rpx;
+  text-align: center;
+  color: #cdcdcd;
+}
+
+.teacherManagement-container-popup-list-checkbox{
+  padding: 10rpx 0;
+}
+
+.teacherManagement-container-popup-btn{
+  display: flex;
+  justify-content: space-around;
+  padding: 20rpx;
+}
