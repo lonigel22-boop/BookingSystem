@@ -1,15 +1,65 @@
 /* KSST 演唱技能树 · 小程序原生版
-   - 进度存本机 wx.setStorageSync（与网页版字段口径一致）
-   - 分数按微信 openid 同步到云开发数据库，榜单显示各人自改昵称
-   - 榜单不分师生：老师和学生页面完全一致、同榜排名，都能改名与上榜
-     （my 页面里的老师专属功能入口仍由 userInfo.isTeacher 控制，与本页无关）
+   - 进度存本机 wx.setStorageSync；分数 / 解锁额度 / 师生归属存云开发
+   - 榜单不分师生：老师和学生同榜排名、显示一致，都能改名与上榜
+   - 解锁额度：score(当前点亮数) < credits(老师发放总量) 才能点亮；
+     撤销 / 清空时 score 变小，额度自动恢复
+   - 老师顶端「⚙ 管理技能点」可给自己和名下学生发放 / 收回额度
+   - 学生首次进入选择自己的老师（老师跳过），归属统一在隐藏后台改
+   - 隐藏后台入口：滑到页面最底部，在底部继续连续竖向滑动 3 次
    部署前请确认 app.js 已 wx.cloud.init({ env: '你的环境ID' }) 且云函数 treeranksystem 已上传。 */
 
 const { BRANCHES, QUIZ } = require('./data.js');
 
 const LS_KEY   = 'ksst_tree_v3';   // 本机进度（网页版同名，口径一致）
 const NAME_KEY = 'ksst_lb_name';   // 榜单昵称本机缓存
+const CRED_KEY = 'ksst_credits';   // 离线时额度的本机兜底
 const FN       = 'treeranksystem'; // 云函数名（与 cloudfunctions/ 下的目录名保持一致）
+
+/* ============================================================
+   老师名单：已接进你们约课小程序的真实接口
+   ------------------------------------------------------------
+   云函数 getTeacheres → 查 teachers 集合，返回数组；
+   参数 { name:'', page:0, pageSize:100 }（name 为空=不按名字过滤），
+   按 y 升序，和首页 getTeachersShops() / teacherManagement 用的是同一个。
+   每项规范成 { id, name }：
+     id   = _openid  ★ 必须！约课系统的师生关系键就是老师的 openid
+                       （users.tearchreOpenid_course[].teacherOpenid）
+     name = name || nickName（teachers 表里是真实姓名，如「邝贤妍」）
+   这样学生选老师时存进 ksst_scores.teacherId 的值，
+   与「我的学生」页的 teacherOpenid 完全一致，两边能对上。
+   兜底顺序：云函数失败 → globalData.teachers / 缓存 → 空数组
+   ============================================================ */
+const TEACHER_FN  = 'getTeacheres';
+const TEACHER_URL = '';
+
+function normalizeTeachers(raw) {
+  const arr = Array.isArray(raw) ? raw : (raw && (raw.list || raw.data || raw.result || raw.teachers)) || [];
+  const out = [], seen = {};
+  arr.forEach(function (it) {
+    if (!it || typeof it !== 'object') return;
+    const name = String(it.name || it.nickName || it.realName || it.teacherName || '').trim();
+    if (!name) return;
+    // ★ _openid 优先，_id 只是文档 id，不能当师生关系键
+    const id = String(it._openid || it.openid || it.teacherOpenid || it.id || it.teacherId || it._id || name).trim();
+    if (!id || seen[id]) return;
+    seen[id] = 1;
+    out.push({ id: id, name: name });
+  });
+  return out;
+}
+
+/* 把「未知操作」这类云端错误翻译成能直接照做的提示。
+   旧版 treeranksystem 只有 sync / board，manageList 等新 action 会返回「未知操作」。 */
+function cloudHint(msg) {
+  const m = String(msg || '云端返回异常');
+  if (m.indexOf('未知操作') >= 0 || m.indexOf('is not defined') >= 0) {
+    return '云函数未更新：请在微信开发者工具右键 cloudfunctions/treeranksystem → 上传并部署（云端安装依赖），然后重进页面';
+  }
+  if (m.indexOf('Db or Table not exist') >= 0 || m.indexOf('ksst_scores') >= 0) {
+    return '缺少集合：云开发控制台 → 数据库 → 新建集合 ksst_scores';
+  }
+  return m;
+}
 
 function rgba(hex, a) {
   let h = String(hex || '#8b9cff').replace('#', '');
@@ -37,6 +87,11 @@ BRANCHES.forEach(function (b) { b.nodes.forEach(function (n) { ALL.push(n); }); 
 Page({
   data: {
     myName: '',
+    // isTeacher 只用于「是否显示管理按钮 / 是否跳过选老师 / 能否进后台」，
+    // 榜单显示与排名完全不分师生（上一轮成果保留）
+    isTeacher: false,
+    myCredits: 0, myTeacherId: '', myTeacherName: '',
+    creditLeftText: '',
 
     boardTop: [], boardMeText: '', boardLoading: true, boardErr: '',
 
@@ -60,6 +115,20 @@ Page({
 
     nameShow: false, nameInput: '', nameErr: '',
     confirmShow: false,
+
+    // 选老师（学生首次进入）
+    teacherPickShow: false, teachers: [], teachersLoading: false, teacherErr: '',
+
+    // 管理技能点 / 隐藏后台
+    manageShow: false, manageTab: 'credits', manageLoading: false,
+    manageList: [], adminList: [], stepN: 1,
+    adminPickShow: false, adminPickUid: '', adminPickName: '',
+    // 云端版本探针：2=完整版（额度/管理/归属）；0/1=旧版（只有 sync/board）
+    cloudVer: 0, selfBusy: false,
+    // 页面版本徽标 + 常驻诊断（打开管理弹层自动跑，不用手点、不用看一闪而过的 toast）
+    uiVer: 'v3',
+    diagText: '', diagBad: false, lastErr: '',
+
     toastShow: false, toastMsg: '', toastCol: '#5ee0a0'
   },
 
@@ -72,11 +141,22 @@ Page({
     this._dScrollTop = 0;
     this._touch = null;
     this._dragDist = 0;
+    this._adminSwipes = [];
+    this._teachers = [];
+    try { this.data.myCredits = Number(wx.getStorageSync(CRED_KEY)) || 0; } catch (e) {}
     this.loadIdentity();
     this.render();
     this.refreshBoard();
-    // 师生一致：已设置昵称就进页面校准一次分数（补上离线期间的变化）
-    if (this.data.myName) this.syncScore();
+    // 师生一致：分数同步只做一次，且等老师名单就绪后再做，
+    // 这样老师写进云端的归属 key 是名单里的稳定 id，而不是兜底昵称。
+    // （避免两次云函数并发 add 出重复记录）
+    const self = this;
+    this.fetchTeachers().then(function (list) {
+      self._teachers = list;
+      self.setData({ teachers: list });
+      self.syncScore();
+      self.maybeAskTeacher();
+    });
   },
   onShow: function () {
     // 从「我的」页面改名回来后，重新读名字并同步榜单
@@ -84,16 +164,17 @@ Page({
     this.loadIdentity();
     if (this.data.myName && this.data.myName !== prev) this.syncScore();
     else this.refreshBoard();
+    if (this._teachers && this._teachers.length) this.maybeAskTeacher();
   },
   onUnload: function () {
     clearTimeout(this.qTimer);
     clearTimeout(this.toastTimer);
   },
 
-  /* ==================== 昵称 ====================
-     榜单不分师生，只按微信 openid 认人；这里只负责取「榜单上显示的名字」。
-     老师 / 学生一样可以改名、一样上榜。my 页面里的老师专属功能仍由
-     userInfo.isTeacher 控制，与 tree 页面无关。 */
+  /* ==================== 昵称 / 权限 ====================
+     榜单不分师生，只按微信 openid 认人；这里取「榜单上显示的名字」。
+     isTeacher 只决定：顶端管理按钮、跳过选老师、能否进隐藏后台；
+     榜单显示、排名、改名、上榜对所有人完全一致。 */
   loadIdentity: function () {
     const app = getApp() || {};
     const g   = app.globalData || {};
@@ -108,8 +189,388 @@ Page({
     // NAME_KEY 只作兜底（没登录态 / userInfo 里没名字时）
     let myName = u.name || u.nickName || '';
     if (!myName) { try { myName = wx.getStorageSync(NAME_KEY) || ''; } catch (e) {} }
-    this.setData({ myName: myName });
+    const isTeacher = !!(u.isTeacher || (g.userInfo && g.userInfo.isTeacher) || cached.isTeacher ||
+                         u.role === 'teacher' || u.userType === 'teacher');
+    this.setData({ myName: myName, isTeacher: isTeacher });
+    this._identityRaw = u;
   },
+
+  /* ==================== 老师名单（已接真实接口 getTeacheres） ====================
+     真实调用（与首页 index.js 的 getTeachersShops 一致）：
+       wx.cloud.callFunction({ name:'getTeacheres', data:{ name:'', page:0, pageSize:100 })
+       → 返回 resp.result = teachers 集合的数组
+     getTeacheres 内部用 new RegExp(name,'i') 过滤，name 传 '' 即「不按名字过滤」。
+     云函数失败时退回 globalData.teachers / 缓存，再不行返回空数组（不阻塞页面）。 */
+  fetchTeachers: function () {
+    if (TEACHER_FN && wx.cloud) {
+      return wx.cloud.callFunction({
+        name: TEACHER_FN,
+        data: { name: '', page: 0, pageSize: 100 }
+      }).then(function (r) {
+        const list = normalizeTeachers(r && r.result);
+        return list.length ? list : localTeachers();
+      }).catch(function () { return localTeachers(); });
+    }
+    if (TEACHER_URL) {
+      return new Promise(function (resolve) {
+        wx.request({
+          url: TEACHER_URL, method: 'GET',
+          success: function (r) { resolve(normalizeTeachers(r && r.data)); },
+          fail: function () { resolve(localTeachers()); }
+        });
+      });
+    }
+    return Promise.resolve(localTeachers());
+
+    function localTeachers() {
+      const app = getApp() || {}, g = app.globalData || {};
+      let raw = g.teachers || g.teacherList || null;
+      if (!raw) {
+        try { raw = wx.getStorageSync('teachers') || wx.getStorageSync('teacherList') || null; } catch (e) {}
+      }
+      return normalizeTeachers(raw);
+    }
+  },
+  /* 老师认领学生用的 key = 自己的微信 openid（userInfo._openid）。
+     ★ 与约课系统口径一致：myStudent 页传的 teacherOpenid 就是 userInfo._openid，
+        users.tearchreOpenid_course[].teacherOpenid 也存这个值。
+     学生选老师时存的是名单项的 _openid，两边天然对得上。 */
+  myTeacherKey: function () {
+    const u = this._identityRaw || {}, list = this._teachers || [];
+    const cands = [u._openid, u.openid, u.teacherOpenid, u.teacherId, u.id, u._id]
+      .filter(Boolean).map(String);
+    for (let i = 0; i < cands.length; i++) {
+      if (list.some(function (t) { return t.id === cands[i]; })) return cands[i];
+    }
+    // 名单里没直接命中时：按名字匹配，或直接用 userInfo._openid
+    const hit = list.filter(function (t) { return t.name === this.data.myName; }.bind(this))[0];
+    if (hit) return hit.id;
+    return u._openid || u.openid || this.data.myName || '';
+  },
+
+  /* ==================== 选老师（仅学生，老师跳过） ==================== */
+  maybeAskTeacher: function () {
+    if (this.data.isTeacher) return;                 // 老师没有这一步
+    if (this.data.myTeacherId) return;              // 已绑定
+    if (this.data.teacherPickShow) return;          // 已经弹着
+    if (this._teacherSkip) return;                  // 本次点了「稍后再选」
+    const list = this._teachers || [];
+    this.setData({
+      teacherPickShow: true, teachers: list,
+      teacherErr: list.length ? '' : '未读取到老师名单，请在 index.js 的 fetchTeachers() 接入约课接口'
+    });
+  },
+  openTeacherPicker: function () {
+    this.setData({ teacherPickShow: true, teachers: this._teachers || [],
+      teacherErr: (this._teachers || []).length ? '' : '未读取到老师名单，请检查约课接口' });
+  },
+  closeTeacherPicker: function () {
+    this._teacherSkip = true;   // 本次会话不再反复弹，下次进页面再提醒
+    this.setData({ teacherPickShow: false });
+  },
+  pickTeacher: function (e) {
+    const id = String(e.currentTarget.dataset.id || '');
+    const name = String(e.currentTarget.dataset.name || '');
+    if (!id) return;
+    const self = this;
+    this.callFn({
+      action: 'bindTeacher', teacherId: id, teacherName: name,
+      name: this.data.myName || '微信用户', isTeacher: this.data.isTeacher
+    }).then(function (j) {
+      self.setData({
+        teacherPickShow: false,
+        myTeacherId: j.teacherId || id, myTeacherName: j.teacherName || name
+      });
+      self.toast('✅ 已选择老师：' + (j.teacherName || name), '#5ee0a0');
+      return self.refreshBoard();
+    }).catch(function (err) {
+      self.setData({ teacherErr: err.message });
+    });
+  },
+
+  /* ==================== 解锁额度 ==================== */
+  applyCredits: function (j) {
+    if (!j) return;
+    const credits = Number(j.credits);
+    const patch = {};
+    if (Number.isFinite(credits)) {
+      patch.myCredits = credits;
+      patch.creditLeftText = '已发 ' + credits + ' 点 · 还可解锁 ' +
+        Math.max(0, credits - this.litCount()) + ' 节';
+      try { wx.setStorageSync(CRED_KEY, credits); } catch (e) {}
+    }
+    // 空归属不覆盖本地已绑定的值，避免 bindTeacher 与 board 的异步竞态
+    if (j.teacherId) {
+      patch.myTeacherId = j.teacherId;
+      patch.myTeacherName = j.teacherName || '';
+      /* 约课系统里已绑定老师 / 后台已建档的学生，board 回来时才发现有归属；
+         此刻若选老师弹层因为时序先弹了出来，自动收起，别让学生再选一次。 */
+      if (this.data.teacherPickShow) { patch.teacherPickShow = false; this._teacherSkip = true; }
+    }
+    this.setData(patch);
+  },
+
+  /* ==================== 管理技能点 / 隐藏后台 ==================== */
+  openManage: function (tab) {
+    // 既支持 openManage('admin')，也支持直接绑 bindtap（参数是事件对象）
+    let t = (tab && typeof tab === 'object')
+      ? ((tab.currentTarget && tab.currentTarget.dataset && tab.currentTarget.dataset.tab) || 'credits')
+      : (tab || 'credits');
+    if (!this.data.isTeacher) { this.toast('仅老师可进入管理', '#ff9fb0'); return; }
+    this.setData({ manageShow: true, manageTab: t, manageLoading: true, stepN: 1, lastErr: '' });
+    // 打开即自动体检：结果常驻在弹层里，不用再手点「🔍 云端自检」，
+    // 也不会像 toast 那样 1.8 秒就消失。一眼分清「页面没更新 / 云函数没更新 / 集合没建」。
+    this.runDiag();
+    // 主动探一次版本：board 旧版也有，不会报「未知操作」；
+    // 但旧版返回里没有 ver，管理弹层就能直接显示「云端仍是旧版」。
+    this.callFn({ action: 'board' }).catch(function () {});
+    if (t === 'admin') this.loadAdminList(); else this.loadManageList();
+  },
+
+  /* 自动体检：把云端版本、环境、集合、本人记录写成一段常驻文本 */
+  runDiag: function () {
+    const self = this;
+    this.setData({ diagText: '正在检查云端…', diagBad: false });
+    this.callFn({ action: 'selfCheck' }).then(function (j) {
+      const m = j.me;
+      const bad = j.ver < 2 || !j.readable || !m;
+      self.setData({
+        diagBad: bad,
+        diagText: [
+          '云端 ver=' + j.ver + (j.ver >= 2 ? '（新版 ✅）' : '（旧版 ❌ 需重传云函数）'),
+          '集合 ' + j.collection + (j.readable ? ' 可读 · ' + j.count + ' 条' : ' 不可读：' + j.err),
+          m ? ('本人：' + m.name + ' · credits=' + m.credits + ' · isTeacher=' + m.isTeacher) : '本人：★ 无记录（sync 没建档）'
+        ].join('\n')
+      });
+    }).catch(function (err) {
+      self.setData({ diagBad: true, diagText: '云端自检失败：' + cloudHint(err.message) });
+    });
+  },
+
+  /* ★ 给自己加/减点：完全不依赖 manageList 有没有返回「我」那一行。
+     不带 uid → 云函数按 openid 操作本人。这样即使列表加载失败、
+     或云端还没建好老师记录，老师也一定能给自己加点。 */
+  onSelfAdjust: function (e) {
+    if (this.data.selfBusy) return;
+    const sign = Number((e.currentTarget.dataset || {}).sign || 1);
+    const n = this.data.stepN || 1;
+    const delta = sign * n, self = this;
+    this.setData({ selfBusy: true, lastErr: '' });
+    wx.showLoading({ title: '处理中', mask: true });
+    // 万一请求既不成功也不失败（弱网/超时），8 秒后强制解锁，避免按钮永久点不动
+    clearTimeout(this._selfUnlock);
+    this._selfUnlock = setTimeout(function () {
+      if (self.data.selfBusy) { wx.hideLoading(); self.setData({ selfBusy: false }); }
+    }, 8000);
+    this.callFn({
+      action: 'manageCredits', delta: delta,
+      isTeacher: true, teacherKey: this.myTeacherKey(), name: this.data.myName
+      // 故意不带 uid：按 openid 操作本人
+    }).then(function (j) {
+      wx.hideLoading(); clearTimeout(self._selfUnlock);
+      self.setData({ selfBusy: false, lastErr: '' });
+      self.applyCredits({ credits: j.credits });
+      self.toast((delta > 0 ? '✅ 给自己发放 ' : '↩ 给自己收回 ') + n + ' 点（当前额度 ' + j.credits + '）',
+                 delta > 0 ? '#5ee0a0' : '#ffc98a');
+      self.loadManageList();
+      self.refreshBoard();
+      self.runDiag();
+    }).catch(function (err) {
+      wx.hideLoading(); clearTimeout(self._selfUnlock);
+      const msg = cloudHint(err.message);
+      // 错误常驻在弹层里，不再一闪而过；用户可以直接截图这行字
+      self.setData({ selfBusy: false, lastErr: '加点失败：' + msg });
+      self.toast(msg, '#ff9fb0');
+      self.runDiag();
+    });
+  },
+  closeManage: function () {
+    this.setData({ manageShow: false, adminPickShow: false });
+  },
+  switchManageTab: function (e) {
+    const t = e.currentTarget.dataset.tab;
+    if (!t || t === this.data.manageTab) return;
+    this.setData({ manageTab: t, manageLoading: true });
+    if (t === 'admin') this.loadAdminList(); else this.loadManageList();
+  },
+  loadManageList: function () {
+    const self = this;
+    this.callFn({ action: 'manageList', teacherKey: this.myTeacherKey(),
+                  isTeacher: this.data.isTeacher, myName: this.data.myName })
+      .then(function (j) {
+        const list = (j.list || []).map(function (x) {
+          return Object.assign({}, x, {
+            left: Math.max(0, (Number(x.credits) || 0) - (Number(x.score) || 0))
+          });
+        });
+        /* ★ 「我」必须在列表里，老师才能给自己 +/- 加点。
+           云端正常会返回自己；万一老师记录还没建好，前端补一行占位，
+           uid 用 '__me__'，加点时不传 uid，由云函数认 openid 操作本人。 */
+        if (!list.some(function (x) { return x.me; })) {
+          list.unshift({
+            uid: '__me__', name: self.data.myName || '我',
+            score: self.litCount(), credits: Number(self.data.myCredits) || 0,
+            left: Math.max(0, (Number(self.data.myCredits) || 0) - self.litCount()),
+            isTeacher: true, me: true
+          });
+        }
+        self.setData({ manageList: list, manageLoading: false });
+      })
+      .catch(function (err) {
+        // 即使云端没连通，也保留「我」这一行，老师不会面对一个空列表
+        self.setData({
+          manageLoading: false,
+          manageList: [{
+            uid: '__me__', name: self.data.myName || '我',
+            score: self.litCount(), credits: Number(self.data.myCredits) || 0,
+            left: Math.max(0, (Number(self.data.myCredits) || 0) - self.litCount()),
+            isTeacher: true, me: true
+          }]
+        });
+        self.toast(cloudHint(err.message), '#ff9fb0');
+      });
+  },
+  loadAdminList: function () {
+    const self = this;
+    this.callFn({ action: 'adminList', isTeacher: this.data.isTeacher })
+      .then(function (j) { self.setData({ adminList: j.list || [], manageLoading: false }); })
+      .catch(function (err) {
+        self.setData({ manageLoading: false, adminList: [] });
+        self.toast(err.message, '#ff9fb0');
+      });
+  },
+  onStepMinus: function () { this.setData({ stepN: Math.max(1, (this.data.stepN || 1) - 1) }); },
+  onStepPlus:  function () { this.setData({ stepN: Math.min(30, (this.data.stepN || 1) + 1) }); },
+  /* 每行 [−] / [＋]：按顶部 stepper 设定的 N 收回 / 发放 */
+  onCreditAdjust: function (e) {
+    const uid = String(e.currentTarget.dataset.uid || '');
+    const sign = Number(e.currentTarget.dataset.sign || 1);
+    const n = this.data.stepN || 1;
+    if (!uid) return;
+    const self = this, delta = sign * n;
+    wx.showLoading({ title: '处理中', mask: true });
+    // '__me__' 是前端补的占位行，不带 uid，云函数按 openid 操作本人（给自己加点）
+    const payload = { action: 'manageCredits', delta: delta,
+                      teacherKey: this.myTeacherKey(), isTeacher: this.data.isTeacher };
+    if (uid !== '__me__') payload.uid = uid;
+    this.callFn(payload)
+      .then(function (j) {
+        wx.hideLoading();
+        self.applyCredits({ credits: j.credits });   // 给自己加点后立刻更新顶部额度
+        self.toast((delta > 0 ? '✅ 已发放 ' : '↩ 已收回 ') + n + ' 点（当前额度 ' + j.credits + '）',
+                   delta > 0 ? '#5ee0a0' : '#ffc98a');
+        self.loadManageList();
+        self.refreshBoard();
+      })
+      .catch(function (err) { wx.hideLoading(); self.toast(cloudHint(err.message), '#ff9fb0'); });
+  },
+  /* ===== 老师给自己加点（直连，不经过 manageList）=====
+     截图里「名下还没有学生」时列表里没有可点的 [＋]，老师就没法给自己加。
+     这个入口直接调 manageCredits 且不带 uid，云端按 openid 认本人并自动补建记录，
+     所以哪怕 manageList 因为任何原因读不到人，也能一步加上。 */
+  quickAddSelf: function () {
+    if (!this.data.isTeacher) { this.toast('仅老师可管理技能点', '#ff9fb0'); return; }
+    const self = this, n = this.data.stepN || 1;
+    wx.showLoading({ title: '发放中', mask: true });
+    this.callFn({
+      action: 'manageCredits', delta: n,
+      name: this.data.myName || '',
+      teacherKey: this.myTeacherKey(), isTeacher: true
+    }).then(function (j) {
+      wx.hideLoading();
+      self.applyCredits({ credits: j.credits });
+      self.toast('✅ 已给自己加 ' + n + ' 点（当前额度 ' + j.credits + '）', '#5ee0a0');
+      self.refreshBoard();
+    }).catch(function (err) {
+      wx.hideLoading();
+      self.toast(cloudHint(err.message), '#ff9fb0');
+    });
+  },
+
+  /* ===== 云端自检：一点击就把版本和本人记录摊开给你看 =====
+     用来彻底区分「前端没覆盖」和「云函数没上传」：
+       - 弹「云函数未更新」→ 云端还是旧版，重传 treeranksystem
+       - 弹 ver=2 的详情 → 云端是新版，把内容截图给我，我按字段定位 */
+  selfCheck: function () {
+    const self = this;
+    wx.showLoading({ title: '检查中', mask: true });
+    this.callFn({ action: 'selfCheck' }).then(function (j) {
+      wx.hideLoading();
+      const m = j.me;
+      const lines = [
+        '云端版本 ver=' + j.ver + '（2=新版）',
+        '集合 ' + j.collection + '：' + (j.readable ? '可读' : '不可读 ' + j.err),
+        '记录数：' + j.count,
+        '本人记录：' + (m ? '有' : '★ 无（sync 还没建档）'),
+        m ? ('名字 ' + m.name + ' / isTeacher=' + m.isTeacher) : '',
+        m ? ('credits=' + m.credits + ' / score=' + m.score) : '',
+        m ? ('teacherId=' + (m.teacherId || '(空)')) : '',
+        '支持操作：' + (j.actions || []).length + ' 个'
+      ].filter(Boolean);
+      wx.showModal({
+        title: '🔍 云端自检', content: lines.join('\n'),
+        showCancel: false, confirmText: '知道了'
+      });
+    }).catch(function (err) {
+      wx.hideLoading();
+      wx.showModal({
+        title: '云端自检失败', content: cloudHint(err.message),
+        showCancel: false, confirmText: '知道了'
+      });
+    });
+  },
+
+  /* 后台：统一改归属 */
+  openAdminPick: function (e) {
+    this.setData({
+      adminPickShow: true,
+      adminPickUid: String(e.currentTarget.dataset.uid || ''),
+      adminPickName: String(e.currentTarget.dataset.name || ''),
+      teachers: this._teachers || []
+    });
+  },
+  closeAdminPick: function () { this.setData({ adminPickShow: false }); },
+  pickAdminTeacher: function (e) {
+    this.doSetTeacher(String(e.currentTarget.dataset.id || ''), String(e.currentTarget.dataset.name || ''));
+  },
+  clearAdminTeacher: function () { this.doSetTeacher('', ''); },
+  doSetTeacher: function (tid, tname) {
+    const self = this, uid = this.data.adminPickUid;
+    if (!uid) return;
+    this.callFn({ action: 'adminSetTeacher', uid: uid, teacherId: tid, teacherName: tname,
+                  isTeacher: this.data.isTeacher })
+      .then(function () {
+        self.setData({ adminPickShow: false });
+        self.toast(tid ? '✅ 归属已改为「' + tname + '」' : '已移出归属', '#5ee0a0');
+        self.loadAdminList();
+      })
+      .catch(function (err) { self.toast(err.message, '#ff9fb0'); });
+  },
+
+  /* ---------- 隐藏后台手势：页面最底部连续竖向滑动 3 次 ---------- */
+  onAdminTouchStart: function (e) {
+    if (!e.touches || e.touches.length !== 1) return;
+    const t = e.touches[0];
+    this._adminTouch = { y: t.clientY, x: t.clientX };
+  },
+  onAdminTouchEnd: function (e) {
+    const s = this._adminTouch;
+    this._adminTouch = null;
+    if (!s || !e.changedTouches || !e.changedTouches.length) return;
+    const t = e.changedTouches[0];
+    const dy = t.clientY - s.y, dx = t.clientX - s.x;
+    if (Math.abs(dy) < 40 || Math.abs(dx) > Math.abs(dy)) return;  // 上下方向都算，横向不算
+    const now = Date.now();
+    let arr = this._adminSwipes || [];
+    if (arr.length && now - arr[arr.length - 1] > 1500) arr = [];   // 不连续就重新计
+    arr.push(now);
+    this._adminSwipes = arr;
+    if (arr.length >= 3) {
+      this._adminSwipes = [];
+      this.openManage('admin');
+    }
+  },
+  openAdmin: function () { this.openManage('admin'); },
 
   /* ==================== 本机存档 ==================== */
   loadStore: function () {
@@ -369,6 +830,12 @@ Page({
   /* ==================== 点亮 / 撤销 / 清空 ==================== */
   light: function (id) {
     if (this.status(id) !== 'ready') return;
+    // 解锁额度：score(当前点亮数) 必须 < credits(老师发放总量)
+    // 撤销 / 清空后 score 变小，额度自动恢复，不用额外退还
+    if (this.litCount() >= (Number(this.data.myCredits) || 0)) {
+      this.toast('🔒 解锁额度不足，请找老师发放技能点', '#ff9fb0');
+      return;
+    }
     // 曾点亮过（撤销后重学）→ 免答题直接点亮；只有「清空进度」会抹掉记录
     if (this.store.everLit[id]) { this.doLight(id, true); return; }
     const q = QUIZ[id];
@@ -526,7 +993,11 @@ Page({
 
   /* ==================== 改名 ==================== */
   openName: function () {
-    this.setData({ nameShow: true, nameInput: this.data.myName || '', nameErr: '' });
+    /* 榜单昵称 = users 表里的 name（你们「我的 → 个人信息」页改的就是它）。
+       这里直接跳到真实改名页，单一数据源，避免 tree 页另存一份名字、
+       下次 my 页 onShow 从 getUsers 重新拉取时又被覆盖。
+       改完返回本页，onShow → loadIdentity → syncScore 会自动把新名字推到榜单。 */
+    wx.navigateTo({ url: '/packageA/myUserInfo/index' });
   },
   closeName: function () { this.setData({ nameShow: false }); },
   onNameInput: function (e) { this.setData({ nameInput: e.detail.value, nameErr: '' }); },
@@ -561,18 +1032,33 @@ Page({
   /* openid 由云函数从 cloud.getWXContext() 取，前端拿不到也伪造不了 */
   callFn: function (data) {
     if (!wx.cloud) return Promise.reject(new Error('未初始化云开发'));
+    const self = this;
     return wx.cloud.callFunction({ name: FN, data: data }).then(function (r) {
       const j = r && r.result;
+      // 老版云函数没有 ver 字段；见到 2 就说明云端已是完整版
+      if (j && typeof j.ver === 'number' && j.ver > self.data.cloudVer) {
+        self.setData({ cloudVer: j.ver });
+      }
       if (!j || !j.ok) throw new Error((j && j.msg) || '云端返回异常');
       return j;
     });
   },
   syncScore: function () {
-    // 师生一致：谁点亮都按自己的 openid 同步分数，老师和学生同榜排名
-    if (!this.data.myName) { this.refreshBoard(); return; }
+    // 师生一致：谁点亮都按自己的 openid 同步分数，老师和学生同榜排名。
+    // 老师即使没设昵称也要建云端记录（否则管理页识别不到老师身份），用兜底名。
+    const name = this.data.myName || (this.data.isTeacher ? '微信用户' : '');
+    if (!name) { this.refreshBoard(); return; }
     const self = this;
-    this.callFn({ action: 'sync', name: this.data.myName, score: this.litCount(), total: ALL.length })
-      .then(function () { return self.refreshBoard(); })
+    const payload = {
+      action: 'sync', name: name,
+      score: this.litCount(), total: ALL.length,
+      isTeacher: this.data.isTeacher
+    };
+    // 老师把自己的归属 key 写进云端，manageList 靠它认领名下学生；
+    // 学生不传，避免覆盖已经选好的老师
+    if (this.data.isTeacher) payload.teacherKey = this.myTeacherKey();
+    this.callFn(payload)
+      .then(function (j) { self.applyCredits(j); return self.refreshBoard(); })
       .catch(function () { /* 离线静默，下次操作或刷新自动补上 */ });
   },
   refreshBoard: function () {
@@ -597,9 +1083,17 @@ Page({
         name: x.name, score: Number(x.score) || 0, me: !!x.me
       };
     });
-    let myRank = 0, myScore = 0;
+    let myRank = 0, myScore = 0, me = null;
     for (let i = 0; i < list.length; i++) {
-      if (list[i].me) { myRank = i + 1; myScore = Number(list[i].score) || 0; break; }
+      if (list[i].me) { myRank = i + 1; myScore = Number(list[i].score) || 0; me = list[i]; break; }
+    }
+    // 榜单里带上自己的解锁额度与归属，供点亮判定 / 选老师 / 管理页使用
+    if (me) {
+      this.applyCredits({
+        credits: Number(me.credits) || 0,
+        teacherId: me.teacherId || '',
+        teacherName: me.teacherName || ''
+      });
     }
     if (!this.data.myName) {
       patch.boardMeText = '还没设置榜单昵称 · 点上方「改名」即可上榜 ✨';
@@ -609,6 +1103,8 @@ Page({
         ' · 本机 ' + this.litCount() + '/' + ALL.length + ' 分';
     }
     this.setData(patch);
+    // 榜单回来后才确认是否已绑定老师，避免异步竞态
+    this.maybeAskTeacher();
   },
 
   /* ==================== toast ==================== */

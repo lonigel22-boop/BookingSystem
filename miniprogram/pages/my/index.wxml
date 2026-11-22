@@ -4,6 +4,7 @@
     <view class="container-info-text">{{name ? name : nickName ? nickName : '微信用户' }}</view>
   </view>
   <view class="container-list">
+    <!-- 老师专属：5 个入口都受 userInfo.isTeacher 控制，学生一个都看不到 -->
     <van-cell
       is-link
       title="系统后台管理"
@@ -22,25 +23,34 @@
       is-link
       title="预约课程"
       link-type="navigateTo"
-      url="/pages/systemManagement/myClass/index" 
+      url="/pages/systemManagement/myClass/index"
       wx:if="{{userInfo.isTeacher}}"
     />
     <van-cell
       is-link
       title="课程安排"
       link-type="navigateTo"
-      url="/pages/systemManagement/courseArrangement/index" 
+      url="/pages/systemManagement/courseArrangement/index"
       wx:if="{{userInfo.isTeacher}}"
     />
     <van-cell
       is-link
       title="房间统计"
       link-type="navigateTo"
-      url="/pages/systemManagement/courseSchedulingStatistics/index" 
+      url="/pages/systemManagement/courseSchedulingStatistics/index"
+      wx:if="{{userInfo.isTeacher}}"
+    />
+
+    <!-- 技能树：师生共用入口，进去之后页面与榜单完全一致 -->
+    <van-cell
+      is-link
+      title="🌳 技能树"
+      link-type="navigateTo"
+      url="/pages/tree/index"
     />
 
     <view style="display: flex; flex-direction: column; align-items: center;padding: 80rpx;">
-      <image 
+      <image
       style="width: 240rpx; height: 200rpx;"
       src="../../images/best.svg"
       />

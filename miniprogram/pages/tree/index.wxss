@@ -67,7 +67,18 @@ page {
 .sl { display: block; font-size: 10.5px; color: #7d89a8; margin-bottom: 3px; }
 .sv { display: block; font-size: 19px; font-weight: 700; color: #fff; }
 .sv.green { color: #5ee0a0; }
+.sv.ratio { font-size: 18px; color: #c9c4ff; }
+.sv.ratio .slash { font-size: 13px; color: #7d89a8; font-weight: 400; }
 .sv.route { font-size: 12px; color: #b07bff; line-height: 1.45; margin-top: 3px; }
+/* 额度条右侧：老师「给自己加点」直连按钮 */
+.creditbar-self { flex: 0 0 auto; display: flex; align-items: center; gap: 4px;
+  padding: 9px 12px; border-radius: 12px; font-size: 12px; font-weight: 700;
+  color: #0a0e1a; background: linear-gradient(135deg,#8b7bff,#b07bff);
+  box-shadow: 0 4px 14px rgba(139,123,255,.32); }
+.creditbar-self .cs-plus { font-size: 16px; line-height: 1; }
+/* 管理弹层底部：云端自检 */
+.mdiag { margin: 12px 2px 2px; padding: 11px; text-align: center; font-size: 12px;
+  color: #8fb6ff; border: 1px dashed #2b3a5e; border-radius: 11px; }
 .progwrap { margin-top: 12px; height: 9px; background: #0d1220; border: 1px solid #1e2740;
   border-radius: 99px; overflow: hidden; }
 .progbar { height: 100%; background: linear-gradient(90deg,#5ee0a0,#4aa8ff,#b07bff);
@@ -222,6 +233,112 @@ page {
   padding: 12px; font-size: 14px; font-weight: 700; }
 .cbtn.cancel { background: rgba(255,255,255,.08); color: #7d89a8; margin-right: 9px; }
 .cbtn.ok { background: #ff5d7a; color: #fff; }
+
+/* ---------- 老师：管理技能点按钮 ---------- */
+.adminbar { margin-top: 12px; padding: 12px 14px; border-radius: 13px;
+  background: linear-gradient(92deg, rgba(111,125,255,.18), rgba(160,111,255,.14));
+  border: 1px solid #3a4180; display: flex; align-items: center; }
+.adminbar-t { font-size: 13.5px; font-weight: 700; color: #c9c4ff; }
+.adminbar-s { font-size: 10.5px; color: #7d89a8; margin-left: 8px; flex: 1; line-height: 1.4; }
+.adminbar-arrow { font-size: 20px; color: #a5a0ff; margin-left: 6px; }
+
+/* ---------- 解锁额度 / 我的老师 ---------- */
+.creditbar { margin-top: 10px; padding: 11px 13px; border: 1px solid #1e2740;
+  border-radius: 13px; background: #0d1220; display: flex; align-items: center; }
+.creditbar-l { flex: 1; min-width: 0; }
+.creditbar-t { display: block; font-size: 12.5px; font-weight: 700; color: #5ee0a0; line-height: 1.5; }
+.creditbar-s { display: block; font-size: 10.5px; color: #7d89a8; line-height: 1.5; margin-top: 3px; }
+.creditbar-r { flex: 0 0 auto; margin-left: 8px; font-size: 11.5px; color: #c9c4ff;
+  border: 1px solid #3a4180; border-radius: 99px; padding: 7px 11px; max-width: 110px;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.creditbar-edit { color: #7d89a8; margin-left: 3px; }
+
+/* ---------- 隐藏后台感应区（完全透明，滑到底才碰到） ---------- */
+.admin-zone { height: 90px; margin-top: 6px; }
+
+/* ---------- 选老师 ---------- */
+.tpick { width: 100%; max-height: 78vh; display: flex; flex-direction: column;
+  background: #111726; border: 1px solid #1e2740; border-radius: 16px;
+  padding: 20px 16px 16px; box-sizing: border-box; }
+.tpick.small { max-height: 70vh; }
+.tpickerr { font-size: 12px; color: #ff9fb0; line-height: 1.6; margin: 2px 0 10px; }
+.tpicklist { max-height: 46vh; margin-bottom: 12px; }
+.titem { display: flex; align-items: center; min-height: 54px; padding: 10px 12px;
+  margin-bottom: 9px; border: 1px solid #1e2740; background: #0d1220;
+  border-radius: 12px; box-sizing: border-box; }
+.tavatar { width: 34px; height: 34px; line-height: 34px; text-align: center; flex: 0 0 34px;
+  border-radius: 99px; background: rgba(111,125,255,.2); color: #a5c2ff; font-size: 11px;
+  overflow: hidden; white-space: nowrap; margin-right: 10px; }
+.titemname { flex: 1; font-size: 14px; font-weight: 600; color: #e6ecff; }
+.titemarrow { font-size: 18px; color: #7d89a8; }
+
+/* ---------- 管理浮层 / 隐藏后台 ---------- */
+.mask.inner { z-index: 460; }
+.manage { width: 100%; max-height: 84vh; display: flex; flex-direction: column;
+  background: #111726; border: 1px solid #1e2740; border-radius: 18px;
+  padding: 18px 15px 14px; box-sizing: border-box; }
+.mhead { display: flex; align-items: center; margin-bottom: 12px; }
+.mtitle { font-size: 16.5px; font-weight: 700; flex: 1; }
+.mclose { font-size: 12.5px; color: #7d89a8; border: 1px solid #1e2740;
+  border-radius: 99px; padding: 7px 13px; }
+.mtabs { display: flex; margin-bottom: 12px; }
+/* 云端版本自检条 */
+.cver { font-size: 10.5px; line-height: 1.55; padding: 8px 10px; border-radius: 10px; margin-bottom: 10px; }
+.cver.ok  { color: #5ee0a0; background: rgba(94,224,160,.08); border: 1px solid rgba(94,224,160,.25); }
+.cver.bad { color: #ffc98a; background: rgba(255,180,90,.08); border: 1px solid rgba(255,180,90,.32); }
+/* 页面版本徽标：看得到 v3 才说明 WXML 覆盖成功 */
+.uiver { display: inline-block; vertical-align: middle; margin-left: 6px;
+  font-size: 10px; font-weight: 700; letter-spacing: .5px; color: #b8a8ff;
+  border: 1px solid #4a4390; background: rgba(140,120,255,.14);
+  padding: 2px 7px; border-radius: 99px; }
+/* 自动体检 / 常驻错误 */
+.mdiagbox { margin-bottom: 10px; padding: 9px 11px; border-radius: 10px;
+  border: 1px solid rgba(94,224,160,.25); background: rgba(94,224,160,.07); }
+.mdiagbox.bad { border-color: rgba(255,180,90,.4); background: rgba(255,180,90,.09); }
+.mdiagbox-t { font-size: 10.5px; color: #8fb6ff; margin-bottom: 4px; font-weight: 600; }
+.mdiagbox-c { font-size: 11px; line-height: 1.65; color: #cdd6ee; white-space: pre-line; }
+.mlasterr { margin-bottom: 10px; padding: 9px 11px; border-radius: 10px;
+  font-size: 11.5px; line-height: 1.6; color: #ffb1bd;
+  border: 1px solid rgba(255,93,122,.45); background: rgba(255,93,122,.10); }
+.mself-title { font-size: 11.5px; color: #b8a8ff; font-weight: 600; margin: 0 0 6px 2px; }
+/* 给我自己：独立加点条 */
+.mself { display: flex; align-items: center; padding: 10px 12px; margin-bottom: 10px;
+  border: 1px solid #3a4180; background: rgba(140,120,255,.10); border-radius: 12px; }
+.mself-l { flex: 1; font-size: 12.5px; color: #e6e1ff; font-weight: 600; }
+.mself-n { color: #b8a8ff; font-weight: 700; margin-left: 4px; }
+.mself-btns { display: flex; align-items: center; }
+.mself-step { width: 46px; text-align: center; font-size: 11px; color: #b8a8ff; }
+.mtab { flex: 1; text-align: center; padding: 10px; font-size: 13px; border-radius: 10px;
+  border: 1px solid #1e2740; background: #0d1220; color: #7d89a8; margin-right: 9px; }
+.mtab:last-child { margin-right: 0; }
+.mtab.on { background: linear-gradient(92deg,#6f7dff,#a06fff); color: #fff; border-color: transparent; }
+.mstep { display: flex; align-items: center; padding: 10px 12px; border-radius: 12px;
+  background: #0d1220; border: 1px solid #1e2740; margin-bottom: 9px; }
+.mstep-l { flex: 1; font-size: 12.5px; color: #cdd6ee; }
+.mstepper { display: flex; align-items: center; }
+.mstepbtn { width: 34px; height: 34px; line-height: 32px; text-align: center; font-size: 19px;
+  border-radius: 9px; border: 1px solid #3a4180; color: #c9c4ff; background: rgba(111,125,255,.12); }
+.mstepn { width: 44px; text-align: center; font-size: 16px; font-weight: 700; color: #fff; }
+.mstep-r { margin-left: 8px; font-size: 10.5px; color: #7d89a8; }
+.mnote { font-size: 11px; color: #7d89a8; line-height: 1.6; margin-bottom: 11px; }
+.mloading { font-size: 12.5px; color: #7d89a8; padding: 20px 0; text-align: center; }
+.mlist { max-height: 46vh; }
+.mrow { display: flex; align-items: center; padding: 11px 12px; margin-bottom: 9px;
+  border: 1px solid #1e2740; background: #0d1220; border-radius: 12px; }
+.mrowinfo { flex: 1; min-width: 0; }
+.mname { font-size: 13.5px; font-weight: 700; color: #e6ecff; }
+.mtag { font-size: 10px; color: #5ee0a0; border: 1px solid rgba(94,224,160,.35);
+  border-radius: 99px; padding: 1px 6px; margin-left: 6px; font-weight: 400; }
+.mtag.t { color: #ffc98a; border-color: rgba(255,180,84,.4); }
+.mmeta { font-size: 11px; color: #7d89a8; margin-top: 4px; line-height: 1.5; }
+.mbtns { display: flex; flex: 0 0 auto; margin-left: 8px; }
+.mbtn { min-width: 38px; height: 38px; line-height: 36px; text-align: center; font-size: 19px;
+  border-radius: 10px; margin-left: 6px; padding: 0 9px; font-weight: 700; }
+.mbtn.minus { color: #ff9fb0; border: 1px solid rgba(255,93,122,.35); background: rgba(255,93,122,.10); }
+.mbtn.plus  { color: #5ee0a0; border: 1px solid rgba(94,224,160,.35); background: rgba(94,224,160,.10); }
+.mbtn.edit { font-size: 12px; line-height: 38px; color: #c9c4ff; border: 1px solid #3a4180;
+  background: rgba(111,125,255,.12); }
+.mempty { font-size: 12px; color: #7d89a8; text-align: center; padding: 20px 0; line-height: 1.6; }
 
 /* ---------- toast ---------- */
 .toast { position: fixed; left: 12px; right: 12px; bottom: 30px;

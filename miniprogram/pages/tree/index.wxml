@@ -1,15 +1,40 @@
 <view class="page">
 
-  <!-- 顶部标题 -->
+  <!-- 顶部标题。★ 右侧「v3」是页面版本标记：
+       如果打开页面看不到 v3，说明 WXML 根本没覆盖成功（放错目录 / 工具缓存），
+       这时再怎么传云函数都没用。 -->
   <view class="hd">
-    <view class="hd-title">KSST 演唱技能树</view>
+    <view class="hd-title">KSST 演唱技能树 <text class="uiver">{{uiVer}}</text></view>
     <view class="hd-sub">邝氏演唱演讲训练体系 · 每节课点亮一个技能点 · 进度存在本机</view>
   </view>
 
-  <!-- 榜单昵称（师生一致，谁都可以改名上榜） -->
+  <!-- 榜单昵称：直接读 users.name（在「我的 → 个人信息」里改），师生一致 -->
   <view class="mebar">
     <view class="mebar-l">榜单昵称 <text class="mebar-name">{{myName || '未设置'}}</text></view>
-    <view class="mebar-btn" bindtap="openName">改名</view>
+    <view class="mebar-btn" bindtap="openName">去改名字 ›</view>
+  </view>
+
+  <!-- 老师专属：管理技能点（榜单显示与排名仍师生一致） -->
+  <view class="adminbar" wx:if="{{isTeacher}}" bindtap="openManage" data-tab="credits">
+    <text class="adminbar-t">⚙ 管理技能点</text>
+    <text class="adminbar-s">给我和我的学生发放 / 收回解锁额度</text>
+    <text class="adminbar-arrow">›</text>
+  </view>
+
+  <!-- 解锁额度 / 我的老师（师生都显示，只是内容不同） -->
+  <view class="creditbar">
+    <view class="creditbar-l">
+      <text class="creditbar-t">🔓 {{creditLeftText || '正在读取解锁额度…'}}</text>
+      <text class="creditbar-s">每点亮 1 节课消耗 1 点额度；撤销或清空后额度自动恢复</text>
+    </view>
+    <view class="creditbar-r" wx:if="{{!isTeacher}}" bindtap="openTeacherPicker">
+      {{myTeacherName ? '老师：' + myTeacherName : '选择老师'}} <text class="creditbar-edit">改</text>
+    </view>
+    <!-- 老师给自己加点的直连入口：不经过 manageList，
+         即使「我的学生」列表为空/读取失败，也能一步给自己发放额度 -->
+    <view class="creditbar-self" wx:if="{{isTeacher}}" bindtap="quickAddSelf">
+      <text class="cs-plus">＋</text><text>给自己加 {{stepN || 1}} 点</text>
+    </view>
   </view>
 
   <!-- 排行榜 -->
@@ -33,9 +58,9 @@
     <view class="lberr" wx:if="{{boardErr}}">{{boardErr}}</view>
   </view>
 
-  <!-- 统计 -->
+  <!-- 统计：第一格显示「已用 / 已解锁」，跟额度制对齐 -->
   <view class="stats">
-    <view class="stat"><text class="sl">总技能点</text><text class="sv">{{statTotal}}</text></view>
+    <view class="stat"><text class="sl">已用 / 已解锁</text><text class="sv ratio">{{statLit}}<text class="slash"> / </text>{{myCredits}}</text></view>
     <view class="stat"><text class="sl">已点亮</text><text class="sv green">{{statLit}}</text></view>
     <view class="stat"><text class="sl">通关成就</text><text class="sv">{{statExam}}</text></view>
     <view class="stat"><text class="sl">路线</text><text class="sv route">气息→初级→中级→高级</text></view>
@@ -92,6 +117,9 @@
     <view>气:声比例沿用图⑤口径；身体部位能量对应图①参与标记，均为教学化表达。</view>
     <view>规则：初级线点满 → 初级考核 → 中级选 3 种风格 → 中级考核 → 三选一专攻 → 高级考核 → 隐藏果实全开。</view>
   </view>
+
+  <!-- 隐藏后台感应区：划到页面最底部后，在此处连续竖向滑动 3 次进入 -->
+  <view class="admin-zone" bindtouchstart="onAdminTouchStart" bindtouchend="onAdminTouchEnd"></view>
 
   <!-- 详情浮层（支持往下滑退出） -->
   <view class="detailbox {{detailShow ? 'show' : ''}} {{detailDragging ? 'dragging' : ''}}"
@@ -159,20 +187,7 @@
     </view>
   </view>
 
-  <!-- 改名弹层 -->
-  <view class="mask" wx:if="{{nameShow}}" bindtap="closeName">
-    <view class="join" catchtap="noop">
-      <view class="jtitle">🏆 设置榜单昵称</view>
-      <view class="jdesc">排行榜上显示的就是这个名字，随时可改。改名后会立刻同步到云端榜单。</view>
-      <input class="jinput" value="{{nameInput}}" maxlength="16" placeholder="2–16 字，例如：小邝同学"
-             bindinput="onNameInput" confirm-type="done" />
-      <view class="jerr">{{nameErr}}</view>
-      <view class="jbtns">
-        <view class="jbtn" bindtap="saveName">保存并同步</view>
-        <view class="jbtn sec" bindtap="closeName">暂不修改</view>
-      </view>
-    </view>
-  </view>
+  <!-- 改名统一走「我的 → 个人信息」页（editUsers → users 表），此处不再另设弹层 -->
 
   <!-- 清空进度确认 -->
   <view class="mask" wx:if="{{confirmShow}}" bindtap="closeConfirm">
@@ -183,6 +198,128 @@
         <view class="cbtn cancel" bindtap="closeConfirm">取消</view>
         <view class="cbtn ok" bindtap="doReset">确认清空</view>
       </view>
+    </view>
+  </view>
+
+  <!-- 选择老师（学生首次进入；老师没有这一步） -->
+  <view class="mask" wx:if="{{teacherPickShow}}">
+    <view class="tpick" catchtap="noop">
+      <view class="jtitle">👩‍🏫 选择你的老师</view>
+      <view class="jdesc">选好后老师就能在管理页看到你，并给你发放解锁技能点。归属之后统一在后台调整。</view>
+      <view class="tpickerr" wx:if="{{teacherErr}}">{{teacherErr}}</view>
+      <scroll-view scroll-y class="tpicklist">
+        <view class="titem" wx:for="{{teachers}}" wx:key="id"
+              data-id="{{item.id}}" data-name="{{item.name}}" bindtap="pickTeacher">
+          <view class="tavatar">{{item.name}}</view>
+          <view class="titemname">{{item.name}}</view>
+          <view class="titemarrow">›</view>
+        </view>
+      </scroll-view>
+      <view class="jbtns"><view class="jbtn sec" bindtap="closeTeacherPicker">稍后再选</view></view>
+    </view>
+  </view>
+
+  <!-- 管理技能点 / 隐藏后台 -->
+  <view class="mask" wx:if="{{manageShow}}" bindtap="closeManage">
+    <view class="manage" catchtap="noop">
+      <view class="mhead">
+        <view class="mtitle">{{manageTab === 'admin' ? '🛠 归属管理后台' : '⚙ 管理技能点'}}</view>
+        <view class="mclose" catchtap="closeManage">✕</view>
+      </view>
+      <view class="mtabs">
+        <view class="mtab {{manageTab === 'credits' ? 'on' : ''}}" data-tab="credits" bindtap="switchManageTab">技能点</view>
+        <view class="mtab {{manageTab === 'admin' ? 'on' : ''}}" data-tab="admin" bindtap="switchManageTab">归属后台</view>
+      </view>
+
+      <!-- 云端版本自检：一眼看出「传了但没生效」是哪一层的问题 -->
+      <view class="cver {{cloudVer >= 2 ? 'ok' : 'bad'}}">
+        <block wx:if="{{cloudVer >= 2}}">☁ 云端 v2 已就绪 · 可正常加点</block>
+        <block wx:else>⚠ 云端仍是旧版：右键项目根目录 cloudfunctions/treeranksystem → 上传并部署；若用网页控制台上传，请确认环境是 wowmusic-booking-system-cf7f200b</block>
+      </view>
+
+      <!-- ★ 自动体检结果常驻：打开弹层就有，不用点、不会消失，直接截图即可定位 -->
+      <view class="mdiagbox {{diagBad ? 'bad' : ''}}" wx:if="{{diagText}}">
+        <view class="mdiagbox-t">页面 {{uiVer}} · 云端体检</view>
+        <view class="mdiagbox-c">{{diagText}}</view>
+      </view>
+      <!-- ★ 加点失败原因常驻，不再一闪而过 -->
+      <view class="mlasterr" wx:if="{{lastErr}}">{{lastErr}}</view>
+
+      <!-- 技能点：调整数量 stepper + 每人 +/- -->
+      <block wx:if="{{manageTab === 'credits'}}">
+        <!-- ★ 给自己加点的独立入口，不依赖下面的列表是否加载成功 -->
+        <view class="mself-title">① 先给自己加点（不依赖下面的学生列表）</view>
+        <view class="mself">
+          <view class="mself-l">给我自己 <text class="mself-n">{{myCredits}} 点</text></view>
+          <view class="mself-btns">
+            <view class="mbtn minus" data-sign="-1" bindtap="onSelfAdjust">−</view>
+            <view class="mself-step">{{stepN}} 点</view>
+            <view class="mbtn plus" data-sign="1" bindtap="onSelfAdjust">＋</view>
+          </view>
+        </view>
+        <view class="mstep">
+          <view class="mstep-l">本次调整数量</view>
+          <view class="mstepper">
+            <view class="mstepbtn" bindtap="onStepMinus">−</view>
+            <view class="mstepn">{{stepN}}</view>
+            <view class="mstepbtn" bindtap="onStepPlus">＋</view>
+          </view>
+          <view class="mstep-r">点 1–30</view>
+        </view>
+        <view class="mnote">「＋」发放额度、「−」收回额度；收回不会低于该人已点亮数。学生刷新页面后即可解锁。</view>
+      </block>
+      <view class="mnote" wx:else>归属统一在这里调整：给学生换老师，或移出归属。学生端只能查看、不能改。</view>
+
+      <view class="mloading" wx:if="{{manageLoading}}">正在读取…</view>
+
+      <!-- 技能点列表：我 + 我的学生 -->
+      <scroll-view scroll-y class="mlist" wx:if="{{manageTab === 'credits' && !manageLoading}}">
+        <view class="mrow" wx:for="{{manageList}}" wx:key="uid">
+          <view class="mrowinfo">
+            <view class="mname">{{item.name}}<text class="mtag" wx:if="{{item.me}}">我</text><text class="mtag t" wx:if="{{item.isTeacher}}">老师</text></view>
+            <view class="mmeta">已点亮 {{item.score}} · 已发 {{item.credits}} 点 · 剩余 {{item.left}} 节</view>
+          </view>
+          <view class="mbtns">
+            <view class="mbtn minus" data-uid="{{item.uid}}" data-sign="-1" bindtap="onCreditAdjust">−</view>
+            <view class="mbtn plus" data-uid="{{item.uid}}" data-sign="1" bindtap="onCreditAdjust">＋</view>
+          </view>
+        </view>
+        <view class="mempty" wx:if="{{manageList.length === 0}}">名下还没有学生。学生选了你之后会出现在这里。</view>
+      </scroll-view>
+      <view class="mdiag" bindtap="selfCheck">🔍 云端自检：看版本 / 本人记录</view>
+
+      <!-- 后台：所有人 + 归属 -->
+      <scroll-view scroll-y class="mlist" wx:if="{{manageTab === 'admin' && !manageLoading}}">
+        <view class="mrow" wx:for="{{adminList}}" wx:key="uid">
+          <view class="mrowinfo">
+            <view class="mname">{{item.name}}<text class="mtag" wx:if="{{item.me}}">我</text><text class="mtag t" wx:if="{{item.isTeacher}}">老师</text></view>
+            <view class="mmeta">老师：{{item.teacherName || '未绑定'}} · {{item.score}} 分 · {{item.credits}} 点</view>
+          </view>
+          <view class="mbtns">
+            <view class="mbtn edit" data-uid="{{item.uid}}" data-name="{{item.name}}" bindtap="openAdminPick">改归属</view>
+          </view>
+        </view>
+        <view class="mempty" wx:if="{{adminList.length === 0}}">还没有任何记录。</view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <!-- 后台改归属：老师名单选择 -->
+  <view class="mask inner" wx:if="{{adminPickShow}}" bindtap="closeAdminPick">
+    <view class="tpick small" catchtap="noop">
+      <view class="jtitle">改归属 · {{adminPickName}}</view>
+      <view class="jdesc">选一位老师，该学生的技能点管理权会归到这位老师名下。</view>
+      <scroll-view scroll-y class="tpicklist">
+        <view class="titem" wx:for="{{teachers}}" wx:key="id"
+              data-id="{{item.id}}" data-name="{{item.name}}" bindtap="pickAdminTeacher">
+          <view class="titemname">{{item.name}}</view>
+          <view class="titemarrow">›</view>
+        </view>
+        <view class="titem" bindtap="clearAdminTeacher">
+          <view class="titemname">移出归属（无老师）</view>
+        </view>
+      </scroll-view>
+      <view class="jbtns"><view class="jbtn sec" bindtap="closeAdminPick">取消</view></view>
     </view>
   </view>
 
