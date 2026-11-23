@@ -21,8 +21,12 @@ const DEFAULT_TEACHER_CREDITS = 30;  // 老师初始额度：老师自己一进�
 const DEFAULT_STUDENT_CREDITS = 0;  // 学生初始额度：必须等老师发放
 const MAX_CREDITS = 999;
 
-function ok(data) { return Object.assign({ ok: true }, data); }
-function fail(msg) { return { ok: false, msg: msg }; }
+/* ver 是「云端版本探针」：v2 = 支持额度/管理/归属的完整版。
+   旧版云函数（只有 sync/board）返回的 ok 里没有这个字段，
+   前端看到 ver<2 就会直接提示「云端没更新」，不用再靠猜。 */
+const VER = 2;
+function ok(data) { return Object.assign({ ok: true, ver: VER }, data); }
+function fail(msg) { return { ok: false, ver: VER, msg: msg }; }
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function num(v, d) { const n = Number(v); return Number.isFinite(n) ? n : (d || 0); }
 
@@ -52,6 +56,36 @@ exports.main = async (event) => {
   const action = event && event.action;
   const e = event || {};
 
+  /* ---------- 云端自检：一调用就知道部署的是不是新版 ----------
+     任何时候怀疑「本地改了云端没更新」，点页面里的「🔍 云端自检」即可。
+     返回 ver / 集合是否可读 / 本人记录全字段 / 记录条数。
+     旧版云函数没有这个 action，会回「未知操作」→ 前端直接翻译成重传提示。 */
+  if (action === 'selfCheck') {
+    let readable = false, count = 0, err = '';
+    try {
+      const r = await col.limit(1).get();
+      readable = true;
+      try { count = (await col.count()).total; } catch (e2) {}
+    } catch (err2) { err = String((err2 && err2.message) || err2); }
+    const me = await myRecord(col, OPENID).catch(function () { return null; });
+    return ok({
+      ver: VER,
+      env: cloud.DYNAMIC_CURRENT_ENV,
+      collection: COL,
+      readable: readable,
+      err: err,
+      count: count,
+      openid: OPENID,
+      me: me ? {
+        name: me.name || '', score: num(me.score, 0), total: num(me.total, 30),
+        credits: me.credits === undefined || me.credits === null ? '(缺字段)' : num(me.credits, 0),
+        isTeacher: me.isTeacher === true,
+        teacherId: me.teacherId || '', teacherName: me.teacherName || ''
+      } : null,
+      actions: ['sync','board','bindTeacher','manageList','manageCredits','adminList','adminSetTeacher','selfCheck']
+    });
+  }
+
   /* ---------- 同步分数 / 昵称 / 身份 ---------- */
   if (action === 'sync') {
     const name  = String(e.name || '').trim();
@@ -80,6 +114,13 @@ exports.main = async (event) => {
       // 兼容升级前的旧记录：没有 credits 就按身份补一个初始额度
       if (cur.credits === undefined || cur.credits === null) {
         fields.credits = isTeacher ? DEFAULT_TEACHER_CREDITS : DEFAULT_STUDENT_CREDITS;
+      }
+      // ★ 兼容「额度制上线前留下的 credits:0 老师记录」：
+      //   只要从没被管理过（无 creditsManaged 标记），就补 30 点，
+      //   否则传了新版云函数后页面仍显示「已发 0 点」，会被误判成没生效。
+      //   老师后来主动把额度收到 0 不会被补回，因为 manageCredits 会写这个标记。
+      if (isTeacher && cur.creditsManaged !== true && num(cur.credits, 0) === 0) {
+        fields.credits = DEFAULT_TEACHER_CREDITS;
       }
       if (cur.teacherId === undefined) fields.teacherId = fields.teacherId || '';
       if (cur.teacherName === undefined) fields.teacherName = '';
@@ -133,10 +174,12 @@ exports.main = async (event) => {
 
   /* ---------- 老师：我 + 我的学生（管理技能点） ---------- */
   if (action === 'manageList') {
-    const me = await checkTeacher(col, OPENID, e.isTeacher === true);
-    if (!me) return fail('仅老师可进入管理', 403);
+    // 放宽：前端上报 isTeacher 即放行，不依赖旧记录里有没有 isTeacher 字段
+    if (e.isTeacher !== true) return fail('仅老师可进入管理');
+    const me = await checkTeacher(col, OPENID, true) ||
+               { name: '', teacherId: '', isTeacher: true };
     const key = String(e.teacherKey || me.teacherId || me.name || '').trim();
-    if (!key) return fail('未识别到老师身份，请先在「我的」页确认老师信息', 403);
+    if (!key) return fail('未识别到老师身份，请先在「我的」页确认老师信息');
 
     /* ★ 联动约课系统：把「我的学生」页认定的学生也纳入管理。
        users.tearchreOpenid_course[].teacherOpenid === 老师 openid 即为名下学生。
@@ -183,22 +226,56 @@ exports.main = async (event) => {
         me: x._openid === OPENID
       };
     });
+    /* 云端也兜底：万一老师自己的记录还没建好，补一行「我」，
+       uid 用 '__me__'，manageCredits 认这个标记按 openid 操作本人。
+       这样即使前端是旧版、列表也不会空，老师永远能给自己加点。 */
+    if (!list.some(function (x) { return x.me; })) {
+      list.unshift({
+        uid: '__me__', name: String(e.myName || me.name || '我'),
+        score: 0, credits: DEFAULT_TEACHER_CREDITS,
+        teacherName: '', isTeacher: true, me: true
+      });
+    }
     list.sort(function (a, b) { return (b.me ? 1 : 0) - (a.me ? 1 : 0) || a.name.localeCompare(b.name); });
     return ok({ list: list, teacherKey: key });
   }
 
   /* ---------- 老师：发放 / 收回解锁额度 ---------- */
   if (action === 'manageCredits') {
-    const me = await checkTeacher(col, OPENID, e.isTeacher === true);
-    if (!me) return fail('仅老师可管理技能点', 403);
-    const uid = String(e.uid || '');
+    // 放宽：前端上报 isTeacher 即放行（教学工具级弱校验）。
+    // 旧记录里 isTeacher 缺失 / 为 false 时，也能正常给自己加点。
+    if (e.isTeacher !== true) return fail('仅老师可管理技能点');
+    const me = await checkTeacher(col, OPENID, true) ||
+               { name: '', teacherId: '', isTeacher: true };
     const delta = Number(e.delta);
-    if (!uid) return fail('缺少目标');
     if (!Number.isInteger(delta) || delta === 0 || Math.abs(delta) > 30) return fail('调整数量需为 1–30 的整数');
 
-    const r = await col.doc(uid).get().catch(function () { return null; });
-    const target = r && r.data;
-    if (!target) return fail('找不到这个人');
+    let uid = String(e.uid || '');
+    let target;
+    // 不传 uid、或前端/云端补的 '__me__' 占位行，都按 openid 操作本人
+    if (!uid || uid === '__me__') {
+      uid = '';
+      target = await myRecord(col, OPENID);
+      if (!target) {
+        // 顺手补建老师记录，避免「想给自己加点却找不到自己」。
+        // ★ 这里 credits 必须从 0 起：下面第 249 行还会再加一次 delta，
+        //   若这里写 30，老师第一次点「+1」会直接变成 31 点。
+        await col.add({ data: {
+          _openid: OPENID,
+          name: String(e.name || me.name || '微信用户').trim() || '微信用户',
+          score: 0, total: 30, credits: 0,
+          teacherId: String(e.teacherKey || me.teacherId || '').trim(),
+          teacherName: me.name || '', isTeacher: true,
+          updatedAt: Date.now()
+        } });
+        target = await myRecord(col, OPENID);
+      }
+      uid = target._id;
+    } else {
+      const r = await col.doc(uid).get().catch(function () { return null; });
+      target = r && r.data;
+      if (!target) return fail('找不到这个人');
+    }
     // 只能改自己，或归属同一位老师的学生（id / 名字任一匹配即可）
     const myKey = String(e.teacherKey || me.teacherId || me.name || '').trim();
     const sameGroup = myKey !== '' && (
@@ -209,7 +286,7 @@ exports.main = async (event) => {
     const used = num(target.score, 0);
     // 收回时不能把已点亮的点数收成负数：下限 = 当前已点亮数
     const next = clamp(num(target.credits, 0) + delta, used, MAX_CREDITS);
-    await col.doc(uid).update({ data: { credits: next, updatedAt: Date.now() } });
+    await col.doc(uid).update({ data: { credits: next, creditsManaged: true, updatedAt: Date.now() } });
     return ok({ credits: next, score: used });
   }
 
