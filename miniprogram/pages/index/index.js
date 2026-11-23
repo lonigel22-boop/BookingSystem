@@ -17,7 +17,8 @@ Page({
     avatarUrl: '', 
     nickName: '',
     currentDate: '',
-    todayCourses: [] 
+    todayCourses: [],
+    isTeacherMe: false 
   }, 
  
   /** 
@@ -26,7 +27,18 @@ Page({
   onShow: function () { 
     this.getTeachersShops() 
     this.initTodayDate()
-    this.fetchTodayCourses()
+    /* ★ 修复「学生登录却显示其他老师的课」：
+       旧版在这里立刻 fetchTodayCourses()，而它读的是 wx.getStorageSync('userInfo')._openid
+       —— 换账号登录时缓存还是上一位老师的，于是查到并显示那位老师当天的课；
+       等身份刷新完又不会重查，旧数据就一直留在版面上。
+       现在：进页面先清空 + 递增身份代次，等 getWXContext 拿到「当前微信真 openid」
+       并确认身份后，才由 applyIdentity 决定是否查询。 */
+    this._identityGen = (this._identityGen || 0) + 1
+    this._isTeacherMe = false
+    this.setData({
+      todayCourses: [], isTeacherMe: false,
+      dialogShow: false, dialogMessage: []
+    })
     const _this = this 
     // 检查登录态是否过期 
     wx.checkSession({ 
@@ -50,37 +62,49 @@ Page({
     });
   },
 
-  // 获取当天课程数据
-  fetchTodayCourses() {
-    const today = moment();
+  /* 获取当天课程数据（只查「当前微信本人」，且只在确认是老师后调用） */
+  fetchTodayCourses(openid, gen) {
+    const g = (gen === undefined) ? this._identityGen : gen
+    if (!this._isTeacherMe || !openid) {
+      this.setData({ todayCourses: [] })
+      return
+    }
+    const today = moment()
+    const startTime = today.startOf('day').valueOf()
+    const endTime = today.endOf('day').valueOf()
     wx.cloud.callFunction({
       name: 'getMyCourse',
       data: {
-        startTime: today.startOf('day').valueOf(),
-        endTime: today.endOf('day').valueOf(),
-        teacherOpenid: wx.getStorageSync('userInfo')._openid,
+        startTime: startTime,
+        endTime: endTime,
+        // ★ 用云函数返回的当前微信真 openid，不再读本地缓存
+        teacherOpenid: openid,
         order: {
           string: 'startTime',
           order: 'asc'
         }
       }
     }).then(resp => {
-      if (resp.result.result && resp.result.result.data) {
-        const courses = resp.result.result.data.map(course => ({
-          ...course,
-          startTime: moment(new Date(course.startTime)).format('HH:mm'),
-          location: `${course.shopName} ${course.room}`,
-          studentName: course.name || '未知学生'
-        }));
-        this.setData({ todayCourses: courses });
-      }
+      // 身份已切换 / 响应乱序回来 → 一律丢弃，绝不覆盖当前版面
+      if (g !== this._identityGen || !this._isTeacherMe) return
+      const r = resp && resp.result
+      // 正常返回 result.result.data；兼容云函数「非老师」分支的 result.data
+      const raw = (r && r.result && r.result.data) || (r && r.data) || []
+      const courses = (Array.isArray(raw) ? raw : []).map(course => ({
+        ...course,
+        startTime: moment(new Date(course.startTime)).format('HH:mm'),
+        location: `${course.shopName} ${course.room}`,
+        studentName: course.name || '未知学生'
+      }))
+      // 空数组也要 setData：身份切换时把上一次的版面清掉
+      this.setData({ todayCourses: courses })
     }).catch(err => {
-      console.log('err', err)
-      wx.showToast({
-        title: '获取课程数据失败',
-        icon: 'none'
-      });
-    });
+      console.log('获取今日课程失败（已清空版面）', err)
+      if (g !== this._identityGen) return
+      // 静默清空：学生 openid 在 teachers 表查不到时云函数会报错，
+      // 不该让学生看到「获取课程数据失败」的提示
+      this.setData({ todayCourses: [] })
+    })
   },
 
   getWXContext() { 
@@ -92,6 +116,8 @@ Page({
       name: 'getWXContext' 
     }).then((resp) => { 
       console.log('云函数getWXContext', resp.result) 
+      // ★ 当前微信真身份（云函数从上下文拿，前端伪造不了），后续查课只认这个
+      this._wxOpenid = resp.result && resp.result.openid
       this.getUserInfo(resp.result) 
       this.setData({ 
         getWXContext: resp.result 
@@ -166,6 +192,7 @@ Page({
           name: re.result[0].name, 
           userInfo: re.result[0] 
         }) 
+        this.applyIdentity(result.openid, re.result[0])
       } else { 
         const data = { 
           _appid: result.appid, 
@@ -194,15 +221,39 @@ Page({
             name: data && data.length? data[0].name : '', 
             userInfo: data && data.length? data[0] : {} 
           }) 
+          this.applyIdentity(result.openid, (data && data.length) ? data[0] : {})
         }).catch((e) => { 
           wx.hideLoading() 
         }) 
       } 
-      this.getMyCourse(result.openid) 
     }).catch((e) => { 
       wx.hideLoading() 
     }) 
   }, 
+
+  /* ★ 身份确认后统一处理「今日课程」与「上课前 6 小时提醒」。
+     openid 来自 getWXContext（微信真身份），user 来自 users 表。
+     学生：一个查课请求都不发、直接清空 —— 从根上杜绝看到别人的课。 */
+  applyIdentity(openid, user) {
+    const oid = openid || (user && user._openid) || ''
+    const flag = user && user.isTeacher
+    const gen = (this._identityGen = (this._identityGen || 0) + 1)
+    if (flag === false) {
+      this._isTeacherMe = false
+      this.setData({
+        isTeacherMe: false, todayCourses: [],
+        dialogShow: false, dialogMessage: []
+      })
+      return
+    }
+    /* isTeacher 显式为 true；万一旧投影没带该字段，仍走兜底：
+       用「当前微信真 openid」查，云函数按 teachers 表校验，
+       学生查不到会返回空/报错，前端一律静默清空。 */
+    this._isTeacherMe = true
+    this.setData({ isTeacherMe: true })
+    this.fetchTodayCourses(oid, gen)
+    this.getMyCourse(oid, gen)
+  },
  
   getTeachersShops() { 
     wx.cloud.callFunction({ 
@@ -240,37 +291,41 @@ Page({
     }) 
   }, 
  
-  // 上课钱6小时通知提醒 
-  getMyCourse(openid) { 
-    wx.cloud.callFunction({ 
-      name: 'getMyCourse', 
-      data: { 
-        startTime: new Date().getTime() + 6 * 60 * 60 * 1000, 
-        endTime: new Date().getTime() + 8 * 60 * 60 * 1000, 
-        teacherOpenid: openid, 
-        order: { 
-          string:'startTime', 
-          order: 'asc' 
-        } 
-      } 
-    }).then(resp => { 
-      console.log('课程结果', resp.result.result) 
-      const courseData = resp.result.result.data.slice(0, 3) 
-      courseData.forEach(res => { 
+  // 上课前 6 小时提醒（同样只对老师本人，且用当前微信真 openid）
+  getMyCourse(openid, gen) {
+    const g = (gen === undefined) ? this._identityGen : gen
+    if (!this._isTeacherMe || !openid) return
+    wx.cloud.callFunction({
+      name: 'getMyCourse',
+      data: {
+        startTime: new Date().getTime() + 6 * 60 * 60 * 1000,
+        endTime: new Date().getTime() + 8 * 60 * 60 * 1000,
+        teacherOpenid: openid,
+        order: {
+          string:'startTime',
+          order: 'asc'
+        }
+      }
+    }).then(resp => {
+      if (g !== this._identityGen || !this._isTeacherMe) return
+      const r = resp && resp.result
+      const raw = (r && r.result && r.result.data) || (r && r.data) || []
+      const courseData = (Array.isArray(raw) ? raw : []).slice(0, 3)
+      courseData.forEach(res => {
         res.startTime = moment(new Date(res.startTime)).format("MM-DD HH:mm:ss")
-        // 从myCourse集合中获取学生姓名
         res.studentName = res.name || '未知学生'
-      }) 
-      if (courseData && courseData.length) { 
-        this.setData({ 
-          dialogShow: true, 
-          dialogMessage: courseData 
-        }) 
-      } 
-    }).catch(err => { 
-      console.log('err', err) 
-    }) 
-  }, 
+      })
+      if (courseData.length) {
+        this.setData({ dialogShow: true, dialogMessage: courseData })
+      } else {
+        this.setData({ dialogShow: false, dialogMessage: [] })
+      }
+    }).catch(err => {
+      console.log('获取上课提醒失败', err)
+      if (g !== this._identityGen) return
+      this.setData({ dialogShow: false, dialogMessage: [] })
+    })
+  },
  
   getchooseAvatar(e) { 
     console.log('修改头像', e, e.detail.avatarUrl); 

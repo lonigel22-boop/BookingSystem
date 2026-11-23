@@ -72,7 +72,8 @@
   </view> 
 
   <!-- 课程详情区域 -->
-  <view class="course-detail-section" wx:if="{{ todayCourses.length > 0 }}">
+  <!-- ★ 今日课程版面：双重保险，只有「已确认是老师的当前账号」且有课时才显示 -->
+  <view class="course-detail-section" wx:if="{{ isTeacherMe && todayCourses.length > 0 }}">
     <view class="day-detail-header">{{ currentDate }} 课程安排</view>
     <view class="day-detail-content">
       <block>
