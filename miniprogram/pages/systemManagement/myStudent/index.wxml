@@ -21,7 +21,7 @@
       <van-cell-group>
         <van-cell title="{{item.name ? item.name : item.nickName}}" label="{{item.courseName}}" wx:for="{{ userList }}" wx:key="_id">
           <van-button class="teacherManagement-container-list-btn" color="#3f6f70" size="small" round hairline data-data="{{ item }}" bindtap="editStudent" custom-style="padding: 0 40rpx;">编辑</van-button>
-          <van-button class="teacherManagement-container-list-btn" color="#ff0000" size="small" round hairline data-data="{{item}}" bindtap="deleteStudent" custom-style="padding: 0 40rpx;">删除</van-button>
+          <van-button class="teacherManagement-container-list-btn" color="#e05a4f" size="small" round hairline data-data="{{item}}" bindtap="deleteStudent" custom-style="padding: 0 40rpx;">删除</van-button>
         </van-cell>
       </van-cell-group>
       <view class="teacherManagement-container-popup-list-hint" hidden="{{hasMore}}">没有更多数据</view>
@@ -32,6 +32,6 @@
       style="width: 240rpx; height: 200rpx;"
       src="../../../images/nodata.png"
       />
-      <view style="color: #000; font-size: 32rpx; padding: 20rpx;">还没有学生</view>
+      <view style="color: #333333; font-size: 32rpx; padding: 20rpx;">还没有学生</view>
     </view>
 </view>

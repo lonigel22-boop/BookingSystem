@@ -1,6 +1,6 @@
 .container {
   min-height: 100vh;
-  background: #0f0f1e;
+  background: #f5f5f5;
   padding: 20rpx;
   box-sizing: border-box;
 }
@@ -8,7 +8,7 @@
 .status-bar {
   display: flex;
   align-items: center;
-  background: #16213e;
+  background: #ffffff;
   border-radius: 16rpx;
   padding: 18rpx 20rpx;
   margin-bottom: 20rpx;
@@ -22,24 +22,24 @@
 }
 
 .dot-green {
-  background: #00ff88;
-  box-shadow: 0 0 10rpx #00ff88;
+  background: #6f9e7b;
+  box-shadow: 0 0 10rpx #6f9e7b;
 }
 
 .dot-red {
-  background: #ff4757;
-  box-shadow: 0 0 10rpx #ff4757;
+  background: #e05a4f;
+  box-shadow: 0 0 10rpx #e05a4f;
 }
 
 .status-text {
   flex: 1;
   font-size: 26rpx;
-  color: #e0e0e0;
+  color: #e6eceb;
 }
 
 .btn-mini {
-  background: #007AFF;
-  color: #fff;
+  background: #3f6f70;
+  color: #ffffff;
   font-size: 22rpx;
   padding: 8rpx 20rpx;
   border-radius: 8rpx;
@@ -48,34 +48,34 @@
 }
 
 .btn-gray {
-  background: #555b6e;
+  background: #666666;
 }
 
 .force-panel {
-  background: linear-gradient(135deg, #16213e, #1a1a2e);
+  background: linear-gradient(135deg, #ffffff, #f5f5f5);
   border-radius: 24rpx;
   padding: 40rpx 24rpx;
   text-align: center;
   margin-bottom: 20rpx;
-  border: 1rpx solid #0f3460;
+  border: 1rpx solid #ffffff;
 }
 
 .force-number {
   font-size: 88rpx;
   font-weight: bold;
-  color: #00d4ff;
+  color: #8aa88f;
 }
 
 .force-unit {
   font-size: 28rpx;
-  color: #8892a4;
+  color: #9aabaa;
   margin-left: 8rpx;
 }
 
 .force-label {
   display: block;
   font-size: 22rpx;
-  color: #8892a4;
+  color: #9aabaa;
   margin-top: 8rpx;
 }
 
@@ -91,47 +91,47 @@
   padding: 18rpx 0;
   border-radius: 12rpx;
   border: none;
-  color: #fff;
+  color: #333333;
 }
 
 .btn-primary {
-  background: #007AFF;
+  background: #3f6f70;
 }
 
 .btn-red {
-  background: #ff4757;
+  background: #e05a4f;
 }
 
 .btn-outline {
   background: transparent;
-  border: 1rpx solid #00d4ff;
-  color: #00d4ff;
+  border: 1rpx solid #8aa88f;
+  color: #8aa88f;
 }
 
 .stat-row {
   display: flex;
   justify-content: space-around;
   font-size: 22rpx;
-  color: #b0b8c4;
+  color: #666666;
   margin-bottom: 12rpx;
 }
 
 .calib-row {
   display: flex;
   justify-content: space-around;
-  background: #16213e;
+  background: #ffffff;
   border-radius: 10rpx;
   padding: 12rpx 8rpx;
   margin-bottom: 20rpx;
   font-size: 20rpx;
-  color: #7f8ba3;
+  color: #9aabaa;
 }
 
 .chart-wrapper {
-  background: #1a1a2e;
+  background: #f5f5f5;
   border-radius: 16rpx;
   padding: 12rpx;
-  border: 1rpx solid #0f3460;
+  border: 1rpx solid #ffffff;
 }
 
 .chart-header {
@@ -142,12 +142,12 @@
 }
 
 .chart-title {
-  color: #c8d0e0;
+  color: #666666;
   font-size: 26rpx;
 }
 
 .chart-sub {
-  color: #6b7590;
+  color: #9aabaa;
   font-size: 20rpx;
 }
 
@@ -157,7 +157,7 @@
   align-items: stretch;
   width: 85vw;
   margin: 0 auto;
-  background: #11152b;
+  background: #ffffff;
   border-radius: 10rpx;
   overflow: hidden;
 }
@@ -168,8 +168,8 @@
   flex: 0 0 34px;
   width: 34px;
   height: 680rpx;
-  background: #11152b;
-  border-right: 1rpx solid #22305a;
+  background: #ffffff;
+  border-right: 1rpx solid #ffffff;
   box-sizing: border-box;
 }
 
@@ -180,7 +180,7 @@
   left: 3px;
   font-size: 20rpx;
   line-height: 1.2;
-  color: #8892a4;
+  color: #9aabaa;
   white-space: nowrap;
 }
 
@@ -191,7 +191,7 @@
 .y-unit {
   top: 50%;
   transform: translateY(-50%);
-  color: #6b7590;
+  color: #9aabaa;
 }
 
 .y-lo {
@@ -203,7 +203,7 @@
   flex: 1;
   min-width: 0;
   white-space: nowrap;
-  background: #11152b;
+  background: #ffffff;
 }
 
 .chart-inner {
@@ -214,7 +214,7 @@
 .chart {
   display: block;
   height: 680rpx;
-  background: #11152b;
+  background: #ffffff;
 }
 
 .chart-footer {
@@ -223,11 +223,11 @@
   align-items: center;
   padding: 10rpx 8rpx 4rpx;
   font-size: 20rpx;
-  color: #6b7590;
+  color: #9aabaa;
 }
 
 .jump {
-  color: #00d4ff;
+  color: #8aa88f;
 }
 
 .tip {
@@ -237,5 +237,20 @@
 
 .tip text {
   font-size: 22rpx;
-  color: #555b6e;
+  color: #666666;
 }
+
+/* ===== 全站统一主题收尾层（ClassHourCatch 风格） ===== */
+page { background: #f5f5f5; color: #333333; }
+.section-title, .page-title {
+  color: #3f6f70;
+  border-left: 8rpx solid #3f6f70;
+  padding-left: 20rpx;
+  font-weight: bold;
+}
+button[type="primary"], .primary-btn, .export-btn, .submit-btn,
+.van-button--primary { background: #3f6f70; border-color: #3f6f70; color: #ffffff; }
+button[disabled], .export-btn[disabled] { background: #cccccc; color: #ffffff; }
+/* 深色页面上翻浅色后：提示条与主色按钮保持白字，避免白底白字 */
+.toast { background: #3f6f70; color: #ffffff; border-color: #335b5c; }
+.act.on, .dact.on, .fbtn.on, .mtab.on, .mebar-btn { color: #ffffff; }

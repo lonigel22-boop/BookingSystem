@@ -2,5 +2,8 @@
   "navigationBarTitleText": "聚合记录",
   "usingComponents": {
     "cloud-tip-modal": "/components/cloudTipModal/index"
-  }
+  },
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f5f5f5"
 }

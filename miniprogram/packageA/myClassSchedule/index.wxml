@@ -18,7 +18,7 @@
                 </van-cell>
               </van-cell-group>
               <view slot="right" class="myClassSchedule-container-list-swipe">
-                <van-button class="myClassSchedule-container-list-swipe-btn" color="#ff0000" size="small" data-data="{{ __item }}" bind:tap="deleteMyCourse">取消</van-button>
+                <van-button class="myClassSchedule-container-list-swipe-btn" color="#e05a4f" size="small" data-data="{{ __item }}" bind:tap="deleteMyCourse">取消</van-button>
               </view>
             </van-swipe-cell>
           </van-collapse-item>

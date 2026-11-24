@@ -65,7 +65,7 @@ function cloudHint(msg) {
 }
 
 function rgba(hex, a) {
-  let h = String(hex || '#8b9cff').replace('#', '');
+  let h = String(hex || '#5a8d89').replace('#', '');
   if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
   const r = parseInt(h.slice(0, 2), 16) || 0;
   const g = parseInt(h.slice(2, 4), 16) || 0;
@@ -126,7 +126,7 @@ Page({
 
     quizShow: false, quizTag: '', quizTitle: '', quizLabel: '', quizStem: '',
     quizOpts: [], quizFeedback: '', quizFeedbackType: '', quizPending: false, quizLocked: false,
-    quizCol: '#5ee0a0', quizColA12: 'rgba(94,224,160,.12)', quizColA40: 'rgba(94,224,160,.4)',
+    quizCol: '#3f6f70', quizColA12: 'rgba(63,111,112,.12)', quizColA40: 'rgba(63,111,112,.4)',
 
     nameShow: false, nameInput: '', nameErr: '',
     confirmShow: false,
@@ -144,7 +144,7 @@ Page({
     adminPickShow: false, adminPickUid: '', adminPickName: '',
     selfBusy: false,
 
-    toastShow: false, toastMsg: '', toastCol: '#5ee0a0'
+    toastShow: false, toastMsg: '', toastCol: '#3f6f70'
   },
 
   /* ==================== 生命周期 ==================== */
@@ -373,7 +373,7 @@ Page({
     // ★ 选完老师后本人不能再改（师生都一样），只能由老师在隐藏管理后台调整。
     //   没选过的人仍可首次选取，这是上榜的必要条件。
     if (this.data.teacherPicked && this.data.myTeacherId) {
-      this.toast('已选定老师，如需更改请由老师在管理后台调整', '#ffd24a');
+      this.toast('已选定老师，如需更改请由老师在管理后台调整', '#c9a227');
       return;
     }
     const list = this.teacherPickList();
@@ -402,7 +402,7 @@ Page({
         myTeacherId: j.teacherId || id, myTeacherName: j.teacherName || name
       });
       self.savePickedCache(j.teacherId || id, j.teacherName || name);
-      self.toast('✅ 已选择老师：' + (j.teacherName || name) + ' · 已获得上榜资格', '#5ee0a0');
+      self.toast('✅ 已选择老师：' + (j.teacherName || name) + ' · 已获得上榜资格', '#3f6f70');
       return self.refreshBoard();
     }).catch(function (err) {
       self.setData({ teacherErr: err.message });
@@ -451,7 +451,7 @@ Page({
     let t = (tab && typeof tab === 'object')
       ? ((tab.currentTarget && tab.currentTarget.dataset && tab.currentTarget.dataset.tab) || 'credits')
       : (tab || 'credits');
-    if (!this.data.isTeacher) { this.toast('仅老师可进入管理', '#ff9fb0'); return; }
+    if (!this.data.isTeacher) { this.toast('仅老师可进入管理', '#e05a4f'); return; }
     this.setData({ manageShow: true, manageTab: t, manageLoading: true, stepN: 1 });
     if (t === 'admin') this.loadAdminList(); else this.loadManageList();
   },
@@ -480,13 +480,13 @@ Page({
       self.setData({ selfBusy: false });
       self.applyCredits({ credits: j.credits });
       self.toast((delta > 0 ? '✅ 给自己发放 ' : '↩ 给自己收回 ') + n + ' 点（当前额度 ' + j.credits + '）',
-                 delta > 0 ? '#5ee0a0' : '#ffc98a');
+                 delta > 0 ? '#3f6f70' : '#ff9800');
       self.loadManageList();
       self.refreshBoard();
     }).catch(function (err) {
       wx.hideLoading(); clearTimeout(self._selfUnlock);
       self.setData({ selfBusy: false });
-      self.toast(cloudHint(err.message), '#ff9fb0');
+      self.toast(cloudHint(err.message), '#e05a4f');
     });
   },
   closeManage: function () {
@@ -532,7 +532,7 @@ Page({
             isTeacher: true, me: true
           }]
         });
-        self.toast(cloudHint(err.message), '#ff9fb0');
+        self.toast(cloudHint(err.message), '#e05a4f');
       });
   },
   /* ★ 后台名单：云端只返回「符合上榜条件」的人（与榜单同规则）。
@@ -549,7 +549,7 @@ Page({
       .catch(function (err) {
         self._adminRaw = [];
         self.setData({ manageLoading: false, adminList: [], adminTotal: 0, adminMatched: 0 });
-        self.toast(err.message, '#ff9fb0');
+        self.toast(err.message, '#e05a4f');
       });
   },
   applyAdminSearch: function (kw) {
@@ -593,16 +593,16 @@ Page({
         wx.hideLoading();
         self.applyCredits({ credits: j.credits });   // 给自己加点后立刻更新顶部额度
         self.toast((delta > 0 ? '✅ 已发放 ' : '↩ 已收回 ') + n + ' 点（当前额度 ' + j.credits + '）',
-                   delta > 0 ? '#5ee0a0' : '#ffc98a');
+                   delta > 0 ? '#3f6f70' : '#ff9800');
         self.loadManageList();
         self.refreshBoard();
       })
-      .catch(function (err) { wx.hideLoading(); self.toast(cloudHint(err.message), '#ff9fb0'); });
+      .catch(function (err) { wx.hideLoading(); self.toast(cloudHint(err.message), '#e05a4f'); });
   },
   /* ★ 管理后台：给「所有人」加减技能点（不受归属限制）。
      云端 manageCredits(admin=true) 仍会校验有效微信用户档案与课程数上限。 */
   onAdminCreditAdjust: function (e) {
-    if (!this.data.isTeacher) { this.toast('仅老师可进入管理后台', '#ff9fb0'); return; }
+    if (!this.data.isTeacher) { this.toast('仅老师可进入管理后台', '#e05a4f'); return; }
     const uid = String(e.currentTarget.dataset.uid || '');
     const sign = Number(e.currentTarget.dataset.sign || 1);
     const n = this.data.stepN || 1;
@@ -629,10 +629,10 @@ Page({
       }
       self.applyAdminSearch();
       self.toast((delta > 0 ? '✅ 已发放 ' : '↩ 已收回 ') + n + ' 点（当前额度 ' + j.credits + '）',
-                 delta > 0 ? '#5ee0a0' : '#ffc98a');
+                 delta > 0 ? '#3f6f70' : '#ff9800');
       if (j.me) self.applyCredits({ credits: j.credits });   // 若操作的是自己
     }).catch(function (err) {
-      wx.hideLoading(); self.toast(cloudHint(err.message), '#ff9fb0');
+      wx.hideLoading(); self.toast(cloudHint(err.message), '#e05a4f');
     });
   },
 
@@ -657,10 +657,10 @@ Page({
                   isTeacher: this.data.isTeacher })
       .then(function () {
         self.setData({ adminPickShow: false });
-        self.toast(tid ? '✅ 归属已改为「' + tname + '」' : '已移出归属', '#5ee0a0');
+        self.toast(tid ? '✅ 归属已改为「' + tname + '」' : '已移出归属', '#3f6f70');
         self.loadAdminList();
       })
-      .catch(function (err) { self.toast(err.message, '#ff9fb0'); });
+      .catch(function (err) { self.toast(err.message, '#e05a4f'); });
   },
 
   /* ---------- 管理后台入口 ----------
@@ -668,7 +668,7 @@ Page({
        学生连热区都不渲染；这里再做一层身份判断，云端 adminList / adminSetTeacher
        也会二次校验 isTeacher，三层都不会被学生绕过。 */
   openAdmin: function () {
-    if (!this.data.isTeacher) { this.toast('仅老师可进入管理后台', '#ff9fb0'); return; }
+    if (!this.data.isTeacher) { this.toast('仅老师可进入管理后台', '#e05a4f'); return; }
     this.openManage('admin');
   },
 
@@ -821,7 +821,7 @@ Page({
             progressSyncText: '☁ 已同步另一台设备的最新进度'
           });
           self.render(); self.syncScore(); self.refreshBoard();
-          self.toast('已同步另一台设备的进度', '#8fb6ff');
+          self.toast('已同步另一台设备的进度', '#5a8d89');
         } else {
           const msg = String((err && err.message) || '');
           const noColl = msg.indexOf('Db or Table not exist') >= 0 ||
@@ -1093,7 +1093,7 @@ Page({
   /* 云端进度还没拉回来时禁止改动：否则本机旧数据会把云端较新的进度覆盖掉 */
   guardProgress: function () {
     if (this.data.progressReady && this._progressReady) return true;
-    this.toast('☁ 正在读取云端进度，稍候再操作', '#ffd24a');
+    this.toast('☁ 正在读取云端进度，稍候再操作', '#c9a227');
     return false;
   },
   light: function (id) {
@@ -1102,7 +1102,7 @@ Page({
     // 解锁额度：score(当前点亮数) 必须 < credits(老师发放总量)
     // 撤销 / 清空后 score 变小，额度自动恢复，不用额外退还
     if (this.litCount() >= (Number(this.data.myCredits) || 0)) {
-      this.toast('🔒 解锁额度不足，请找老师发放技能点', '#ff9fb0');
+      this.toast('🔒 解锁额度不足，请找老师发放技能点', '#e05a4f');
       return;
     }
     // 曾点亮过（撤销后重学）→ 免答题直接点亮；只有「清空进度」会抹掉记录
@@ -1110,19 +1110,19 @@ Page({
     const q = QUIZ[id];
     if (q && !q.pending && q.levels && q.levels.length) { this.openQuiz(id); return; }
     this.doLight(id, false);
-    if (q && q.pending) this.toast('📝 该课程暂无正式题库，已直接激活', '#c9a5ff');
+    if (q && q.pending) this.toast('📝 该课程暂无正式题库，已直接激活', '#6b8f9c');
   },
   doLight: function (id, free) {
     const n = this.byId(id);
     if (this.status(id) !== 'ready' && !this.store.lit[id]) return;
     if (n.pick) {
       if (this.store.picks[id]) return;
-      if (this.pickCount() >= 3) this.toast('基本要求 3 种，多学也可，继续冲 ✨', '#ffb454');
+      if (this.pickCount() >= 3) this.toast('基本要求 3 种，多学也可，继续冲 ✨', '#ff9800');
       this.store.picks[id] = true;
     }
     if (n.major) {
       this.store.major[n.major] = true;
-      this.toast('已选择「' + labelOf(n.major) + '」专攻（' + this.majorCount() + '/1 种）', '#ff5d7a');
+      this.toast('已选择「' + labelOf(n.major) + '」专攻（' + this.majorCount() + '/1 种）', '#e05a4f');
     }
     this.store.lit[id] = true;
     this.store.everLit[id] = true;
@@ -1132,8 +1132,8 @@ Page({
     this.syncScore();
     this.afterStateChange();
     this.toast(free ? '📖 已通过考核，直接点亮「' + n.n + '」' : '✨ 点亮「' + n.n + '」', n.col);
-    if (n.boss) this.toast('🏆 「' + n.n + '」通关！进入下一阶段', '#ffd24a');
-    if (id === 'k3exam') this.toast('💎 「高级考核 · 毕业演出」通关！', '#ffd24a');
+    if (n.boss) this.toast('🏆 「' + n.n + '」通关！进入下一阶段', '#c9a227');
+    if (id === 'k3exam') this.toast('💎 「高级考核 · 毕业演出」通关！', '#c9a227');
   },
   afterStateChange: function () {
     // 小程序里详情是浮层：状态变更后一律收起，绝不自动弹出下一个课程
@@ -1155,14 +1155,14 @@ Page({
     }
     if (n.pick) this.store.picks[id] = false;
     this.saveStore(); this.render(); this.syncScore(); this.afterStateChange();
-    this.toast('已撤销「' + n.n + '」', '#8892b0');
+    this.toast('已撤销「' + n.n + '」', '#9aabaa');
   },
   unpick: function (id) {
     if (!this.guardProgress()) return;
     this.store.picks[id] = false;
     this.store.lit[id] = false;
     this.saveStore(); this.render(); this.syncScore(); this.afterStateChange();
-    this.toast('已取消选学', '#8892b0');
+    this.toast('已取消选学', '#9aabaa');
   },
   openConfirm: function () { this.setData({ confirmShow: true }); },
   closeConfirm: function () { this.setData({ confirmShow: false }); },
@@ -1175,7 +1175,7 @@ Page({
     this.flushProgressPush();
     this.closeDetail();
     this.setData({ d: null });
-    this.toast('进度已清空，重新出发 🌱', '#8892b0');
+    this.toast('进度已清空，重新出发 🌱', '#9aabaa');
   },
 
   /* ==================== 三关答题 ==================== */
@@ -1281,7 +1281,7 @@ Page({
     try { wx.setStorageSync(NAME_KEY, v); } catch (e) {}
     this.syncNameToMyPage(v);
     this.setData({ nameShow: false, myName: v, nameErr: '' });
-    this.toast('✅ 榜单昵称已更新', '#ffd24a');
+    this.toast('✅ 榜单昵称已更新', '#c9a227');
     this.syncScore();   // 立刻把新名字推到云端，榜单名字跟着变
   },
   /* ★ 把新昵称写回「我的」页面读取的位置。
@@ -1417,7 +1417,7 @@ Page({
   /* ==================== toast ==================== */
   toast: function (msg, col) {
     clearTimeout(this.toastTimer);
-    this.setData({ toastShow: true, toastMsg: msg, toastCol: col || '#5ee0a0' });
+    this.setData({ toastShow: true, toastMsg: msg, toastCol: col || '#3f6f70' });
     const self = this;
     this.toastTimer = setTimeout(function () { self.setData({ toastShow: false }); }, 1800);
   }

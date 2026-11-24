@@ -4,7 +4,7 @@
     <view class="teacher-items">
       <block wx:for="{{teachers}}" wx:key="_id">
         <view class="teacher-item {{selectedTeacher._id === item._id ? 'selected' : ''}}" 
-              bindtap="onTeacherSelect" 
+              bind:tap="onTeacherSelect" 
               data-teacher="{{item}}">
           <image class="avatar" src="{{item.avatarUrl || '/images/wao.png'}}" mode="aspectFill"></image>
           <view class="info">
@@ -13,6 +13,7 @@
           </view>
         </view>
       </block>
+      <view wx:if="{{!teachers.length}}" class="empty-hint">暂无教师数据，请稍后下拉重试或检查 teachers 集合</view>
     </view>
   </view>
 

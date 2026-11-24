@@ -22,7 +22,7 @@
         <van-swipe-cell right-width="{{ 80 }}"  wx:for="{{teachers}}" wx:key="_id">
           <van-cell title="{{item.name ? item.name : item.nickName}}" value="{{item.shopName}}" />
           <view slot="right" class="teacherManagement-container-list-swipe">
-            <van-button color="#ff0000" size="small" data-data="{{item}}" bind:tap="seleteTeacher">删除</van-button>
+            <van-button color="#e05a4f" size="small" data-data="{{item}}" bind:tap="seleteTeacher">删除</van-button>
           </view>
         </van-swipe-cell>
       </van-cell-group> -->
@@ -43,7 +43,7 @@
             <van-swipe-cell right-width="{{ 80 }}"  class="movable-item-swipe-cell">
               <van-cell title="{{item.name ? item.name : item.nickName}}" value="{{item.shopName}}" />
               <view slot="right" class="teacherManagement-container-list-swipe">
-                <van-button color="#ff0000" size="small" data-data="{{item}}" bind:tap="seleteTeacher">删除</van-button>
+                <van-button color="#e05a4f" size="small" data-data="{{item}}" bind:tap="seleteTeacher">删除</van-button>
               </view>
             </van-swipe-cell>
           </movable-view>

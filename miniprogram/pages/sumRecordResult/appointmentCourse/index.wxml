@@ -8,7 +8,7 @@
             <van-swipe-cell right-width="{{ 0 }}" wx:for="{{item.myCourse}}" wx:key="_id" wx:for-item="re">
               <van-cell title="教师：{{re.teacherName}}" value="{{re.startTime}}" />
               <view slot="right" class="appointmentCourse-list-swipe">
-                <van-button class="appointmentCourse-list-swipe-btn" color="#ff0000" size="small" data-data="{{re}}" >评价</van-button>
+                <van-button class="appointmentCourse-list-swipe-btn" color="#e05a4f" size="small" data-data="{{re}}" >评价</van-button>
               </view>
             </van-swipe-cell>
           </view>
@@ -18,7 +18,7 @@
               style="width: 240rpx; height: 200rpx;"
               src="../../images/nodata.png"
               />
-              <view style="color: #cdcdcd; font-size: 32rpx; padding: 20rpx;">还没有课程</view>
+              <view style="color: #e6eceb; font-size: 32rpx; padding: 20rpx;">还没有课程</view>
             </view>
           </viw>
         </van-cell-group>

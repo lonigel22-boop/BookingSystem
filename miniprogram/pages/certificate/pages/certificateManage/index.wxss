@@ -4,7 +4,7 @@
 }
 
 .certificate-list, .certificate-form {
-  background-color: #fff;
+  background-color: #ffffff;
   border-radius: 12rpx;
   margin-bottom: 20rpx;
   box-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.1);
@@ -12,13 +12,13 @@
 
 .list-header, .form-header {
   padding: 20rpx;
-  border-bottom: 2rpx solid #eee;
+  border-bottom: 2rpx solid #e6eceb;
 }
 
 .header-title {
   font-size: 32rpx;
   font-weight: bold;
-  color: #006400;
+  color: #4caf50;
 }
 
 .list-content {
@@ -26,7 +26,7 @@
 }
 
 .certificate-item {
-  background-color: #f9f9f9;
+  background-color: #f8f8f8;
   border-radius: 8rpx;
   padding: 20rpx;
   margin-bottom: 20rpx;
@@ -39,12 +39,12 @@
 }
 
 .info-label {
-  color: #666;
+  color: #666666;
   width: 160rpx;
 }
 
 .info-value {
-  color: #333;
+  color: #333333;
   flex: 1;
 }
 
@@ -62,13 +62,13 @@
 }
 
 .edit {
-  background-color: #006400;
-  color: #fff;
+  background-color: #4caf50;
+  color: #ffffff;
 }
 
 .delete {
-  background-color: #ff4d4f;
-  color: #fff;
+  background-color: #e05a4f;
+  color: #333333;
 }
 
 .form-content {
@@ -82,14 +82,14 @@
 .form-label {
   display: block;
   margin-bottom: 10rpx;
-  color: #333;
+  color: #333333;
   font-size: 28rpx;
 }
 
 .form-input {
   width: 100%;
   height: 80rpx;
-  border: 2rpx solid #ddd;
+  border: 2rpx solid #e6eceb;
   border-radius: 6rpx;
   padding: 0 20rpx;
   box-sizing: border-box;
@@ -104,8 +104,8 @@
   width: 100%;
   height: 88rpx;
   line-height: 88rpx;
-  background-color: #006400;
-  color: #fff;
+  background-color: #4caf50;
+  color: #ffffff;
   font-size: 32rpx;
   border-radius: 6rpx;
   margin-top: 40rpx;
@@ -113,6 +113,21 @@
 
 .no-data {
   text-align: center;
-  color: #999;
+  color: #9aabaa;
   padding: 40rpx 0;
 }
+
+/* ===== 全站统一主题收尾层（ClassHourCatch 风格） ===== */
+page { background: #f5f5f5; color: #333333; }
+.section-title, .page-title {
+  color: #3f6f70;
+  border-left: 8rpx solid #3f6f70;
+  padding-left: 20rpx;
+  font-weight: bold;
+}
+button[type="primary"], .primary-btn, .export-btn, .submit-btn,
+.van-button--primary { background: #3f6f70; border-color: #3f6f70; color: #ffffff; }
+button[disabled], .export-btn[disabled] { background: #cccccc; color: #ffffff; }
+/* 深色页面上翻浅色后：提示条与主色按钮保持白字，避免白底白字 */
+.toast { background: #3f6f70; color: #ffffff; border-color: #335b5c; }
+.act.on, .dact.on, .fbtn.on, .mtab.on, .mebar-btn { color: #ffffff; }

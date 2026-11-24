@@ -1,6 +1,6 @@
 /* ---------- 房间统计 · 视觉重做 ---------- */
 page {
-  background: #f4f7f6;
+  background: #f5f5f5;
 }
 
 .page {
@@ -8,7 +8,7 @@ page {
   box-sizing: border-box;
   padding: 0 24rpx 48rpx;
   padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
-  background: #f4f7f6;
+  background: #f5f5f5;
 }
 
 /* 顶部渐变标题 */
@@ -22,33 +22,33 @@ page {
 .hero-deco {
   position: absolute;
   border-radius: 50%;
-  background: rgba(255, 255, 255, .09);
+  background: rgba(63,111,112,0.038);
   pointer-events: none;
 }
 .hero-deco-a { width: 260rpx; height: 260rpx; right: -70rpx; top: -110rpx; }
-.hero-deco-b { width: 170rpx; height: 170rpx; right: 110rpx; bottom: -100rpx; background: rgba(255,255,255,.06); }
+.hero-deco-b { width: 170rpx; height: 170rpx; right: 110rpx; bottom: -100rpx; background: rgba(63,111,112,0.025); }
 .hero-inner {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-.hero-title { font-size: 38rpx; font-weight: 700; color: #fff; letter-spacing: 2rpx; }
-.hero-sub { margin-top: 12rpx; font-size: 23rpx; color: rgba(255,255,255,.82); line-height: 1.5; }
+.hero-title { font-size: 38rpx; font-weight: 700; color: #333333; letter-spacing: 2rpx; }
+.hero-sub { margin-top: 12rpx; font-size: 23rpx; color: rgba(63,111,112,0.34); line-height: 1.5; }
 .hero-badge {
   flex: 0 0 auto;
   padding: 12rpx 24rpx;
   border-radius: 99rpx;
-  background: rgba(255,255,255,.18);
-  border: 1rpx solid rgba(255,255,255,.32);
-  color: #fff;
+  background: rgba(63,111,112,0.076);
+  border: 1rpx solid rgba(63,111,112,0.134);
+  color: #333333;
   font-size: 24rpx;
   font-weight: 600;
 }
 
 /* 通用卡片 */
 .card {
-  background: #fff;
+  background: #ffffff;
   border-radius: 22rpx;
   box-shadow: 0 8rpx 30rpx rgba(31, 61, 60, .06);
   box-sizing: border-box;
@@ -59,18 +59,18 @@ page {
 .filter-card { padding: 28rpx 28rpx 30rpx; }
 .field-label {
   font-size: 23rpx;
-  color: #8a9a99;
+  color: #9aabaa;
   font-weight: 600;
   letter-spacing: 1rpx;
   margin-bottom: 12rpx;
 }
 .shop-menu {
-  background: #f6f9f8 !important;
+  background: #f8f8f8 !important;
   border-radius: 14rpx;
   overflow: hidden;
   box-shadow: none !important;
 }
-.filter-line { height: 1rpx; background: #eef2f1; margin: 26rpx 0 24rpx; }
+.filter-line { height: 1rpx; background: #e6eceb; margin: 26rpx 0 24rpx; }
 .date-row { display: flex; align-items: center; gap: 14rpx; }
 .date-box {
   flex: 1;
@@ -78,14 +78,14 @@ page {
   height: 80rpx;
   display: flex;
   align-items: center;
-  background: #f6f9f8;
-  border: 1rpx solid #e3ecea;
+  background: #f8f8f8;
+  border: 1rpx solid #e6eceb;
   border-radius: 14rpx;
   padding: 0 20rpx;
   box-sizing: border-box;
 }
 .date-ico { font-size: 28rpx; margin-right: 12rpx; }
-.date-val { flex: 1; font-size: 27rpx; color: #28403f; font-weight: 600; }
+.date-val { flex: 1; font-size: 27rpx; color: #333333; font-weight: 600; }
 .date-arrow { font-size: 34rpx; color: #9aabaa; line-height: 1; }
 .mini-btn {
   flex: 0 0 auto;
@@ -93,50 +93,40 @@ page {
   line-height: 78rpx;
   padding: 0 22rpx;
   border-radius: 14rpx;
-  background: #eef4f3;
-  border: 1rpx solid #dce9e7;
+  background: #f8f8f8;
+  border: 1rpx solid #e6eceb;
   color: #3f6f70;
   font-size: 24rpx;
   font-weight: 600;
   box-sizing: border-box;
 }
-.mini-btn-on { background: #3f6f70; border-color: #3f6f70; color: #fff; }
+.mini-btn-on { background: #3f6f70; border-color: #3f6f70; color: #ffffff; }
 
 /* 概览三格 */
-.stat-row {
-  display: flex;
-  gap: 16rpx;
-  margin-bottom: 24rpx;
-}
+.stat-row { display: flex; gap: 16rpx; margin-bottom: 24rpx; }
 .stat-cell {
   flex: 1;
   min-width: 0;
-  background: #fff;
+  background: #ffffff;
   border-radius: 20rpx;
   padding: 26rpx 10rpx 24rpx;
   text-align: center;
   box-shadow: 0 8rpx 30rpx rgba(31, 61, 60, .06);
   box-sizing: border-box;
 }
-.stat-num {
-  font-size: 42rpx;
-  font-weight: 700;
-  color: #3f6f70;
-  line-height: 1.15;
-  white-space: nowrap;
-}
+.stat-num { font-size: 42rpx; font-weight: 700; color: #3f6f70; line-height: 1.15; white-space: nowrap; }
 .stat-num-sm { font-size: 27rpx; padding-top: 10rpx; padding-bottom: 6rpx; }
-.stat-lab { margin-top: 10rpx; font-size: 21rpx; color: #8a9a99; }
+.stat-lab { margin-top: 10rpx; font-size: 21rpx; color: #9aabaa; }
 
-/* 图表卡 */
-.chart-card { padding: 28rpx 20rpx 20rpx; }
+/* ---------- 图表卡 ---------- */
+.chart-card { padding: 28rpx 20rpx 22rpx; }
 .chart-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 8rpx 22rpx;
 }
-.chart-title { font-size: 29rpx; font-weight: 700; color: #243b3a; }
+.chart-title { font-size: 29rpx; font-weight: 700; color: #333333; }
 .chart-tip { margin-top: 8rpx; font-size: 20rpx; color: #9aabaa; }
 .chart-dot {
   width: 14rpx; height: 14rpx; border-radius: 50%;
@@ -144,30 +134,182 @@ page {
   box-shadow: 0 0 0 8rpx rgba(90, 141, 137, .12);
   margin-right: 10rpx;
 }
-.chart-canvas {
-  width: 100%;
-  height: 620rpx;
-  display: block;
+
+/* 时间刻度尺 */
+.tl-scale { display: flex; align-items: flex-end; margin-bottom: 8rpx; }
+.tl-scale-spacer { width: 148rpx; flex: 0 0 148rpx; }
+.tl-scale-track { flex: 1; position: relative; height: 34rpx; }
+.tl-tick { position: absolute; bottom: 0; width: 1rpx; }
+.tl-tick-label {
+  position: absolute;
+  bottom: 6rpx;
+  left: 0;
+  transform: translateX(-50%);
+  font-size: 18rpx;
+  color: #9aabaa;
+  white-space: nowrap;
 }
+
+/* 房间行 */
+.tl-row { padding: 14rpx 0 16rpx; border-bottom: 1rpx solid #e6eceb; }
+.tl-row:last-of-type { border-bottom: none; }
+.tl-line { display: flex; align-items: flex-start; }
+.tl-room {
+  width: 148rpx;
+  flex: 0 0 148rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  padding-right: 12rpx;
+  box-sizing: border-box;
+  min-height: 72rpx;
+}
+.tl-room-dot { width: 16rpx; height: 16rpx; border-radius: 50%; margin-bottom: 8rpx; }
+.tl-room-name {
+  font-size: 23rpx;
+  color: #333333;
+  font-weight: 700;
+  line-height: 1.3;
+  word-break: break-all;
+}
+.tl-room-count { margin-top: 4rpx; font-size: 19rpx; color: #9aabaa; }
+
+/* 时间轨道 */
+.tl-track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  background: #f8f8f8;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+.tl-grid { position: absolute; top: 0; bottom: 0; width: 1rpx; background: #e6eceb; }
+.tl-now {
+  position: absolute; top: 0; bottom: 0; width: 2rpx;
+  background: #e05a4f; z-index: 3;
+}
+.tl-block {
+  position: absolute;
+  height: 46rpx;
+  border-radius: 10rpx;
+  display: flex;
+  align-items: center;
+  padding: 0 8rpx;
+  box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0 2rpx 8rpx rgba(31, 61, 60, .18);
+  z-index: 2;
+}
+.tl-block-txt {
+  font-size: 17rpx;
+  color: #333333;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* 课程明细小条 */
+.tl-detail-list {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 12rpx 0 0 148rpx;
+}
+.tl-chip {
+  display: flex;
+  align-items: center;
+  background: #f8f8f8;
+  border: 1rpx solid #e6eceb;
+  border-radius: 99rpx;
+  padding: 7rpx 16rpx;
+  margin: 0 10rpx 8rpx 0;
+  max-width: 100%;
+}
+.tl-chip-time { font-size: 19rpx; color: #3f6f70; font-weight: 700; }
+.tl-chip-name {
+  font-size: 19rpx;
+  color: #666666;
+  margin-left: 10rpx;
+  max-width: 170rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tl-room-free { padding: 12rpx 0 0 148rpx; font-size: 19rpx; color: #9aabaa; }
+
+.tl-legend {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 18rpx 8rpx 0;
+}
+.tl-legend-txt { font-size: 19rpx; color: #9aabaa; margin-right: 10rpx; }
 
 /* 加载 / 空状态 */
 .state-box {
-  height: 620rpx;
+  height: 420rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #fafcfb;
+  background: #f8f8f8;
   border-radius: 16rpx;
 }
 .state-ico { font-size: 64rpx; margin-bottom: 20rpx; }
-.state-t { font-size: 27rpx; color: #4a615f; font-weight: 600; }
+.state-t { font-size: 27rpx; color: #666666; font-weight: 600; }
 .state-d { margin-top: 10rpx; font-size: 22rpx; color: #9aabaa; }
 
 .foot-hint {
   text-align: center;
   font-size: 20rpx;
-  color: #a6b3b2;
+  color: #9aabaa;
   line-height: 1.6;
   padding: 4rpx 20rpx 0;
 }
+
+/* ---------- 课程详情浮层 ---------- */
+.cd-mask {
+  position: fixed; left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(20, 38, 37, .42);
+  z-index: 900;
+}
+.cd-sheet {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: #ffffff;
+  border-radius: 28rpx 28rpx 0 0;
+  padding: 20rpx 36rpx calc(40rpx + env(safe-area-inset-bottom));
+  z-index: 901;
+  box-shadow: 0 -10rpx 40rpx rgba(20, 38, 37, .12);
+  box-sizing: border-box;
+}
+.cd-bar {
+  width: 72rpx; height: 8rpx; border-radius: 99rpx;
+  background: #e6eceb; margin: 0 auto 24rpx;
+}
+.cd-head { display: flex; align-items: center; }
+.cd-dot { width: 20rpx; height: 20rpx; border-radius: 50%; margin-right: 14rpx; }
+.cd-room { flex: 1; font-size: 32rpx; font-weight: 700; color: #333333; }
+.cd-close { font-size: 32rpx; color: #9aabaa; padding: 0 8rpx; }
+.cd-time { margin-top: 22rpx; font-size: 40rpx; font-weight: 700; color: #3f6f70; }
+.cd-date { margin-top: 6rpx; font-size: 22rpx; color: #9aabaa; }
+.cd-line {
+  display: flex; align-items: flex-start;
+  padding: 18rpx 0; border-bottom: 1rpx solid #e6eceb;
+}
+.cd-k { width: 96rpx; flex: 0 0 96rpx; font-size: 24rpx; color: #9aabaa; }
+.cd-v { flex: 1; font-size: 25rpx; color: #333333; font-weight: 600; }
+
+
+/* ===== 全站统一主题收尾层（ClassHourCatch 风格） ===== */
+page { background: #f5f5f5; color: #333333; }
+.section-title, .page-title {
+  color: #3f6f70;
+  border-left: 8rpx solid #3f6f70;
+  padding-left: 20rpx;
+  font-weight: bold;
+}
+button[type="primary"], .primary-btn, .export-btn, .submit-btn,
+.van-button--primary { background: #3f6f70; border-color: #3f6f70; color: #ffffff; }
+button[disabled], .export-btn[disabled] { background: #cccccc; color: #ffffff; }
+/* 深色页面上翻浅色后：提示条与主色按钮保持白字，避免白底白字 */
+.toast { background: #3f6f70; color: #ffffff; border-color: #335b5c; }
+.act.on, .dact.on, .fbtn.on, .mtab.on, .mebar-btn { color: #ffffff; }

@@ -190,15 +190,15 @@ Page({
     const cal = this.isCal()
 
     ctx.clearRect(0, 0, W, H)
-    ctx.fillStyle = '#11152b'
+    ctx.fillStyle = '#ffffff'
     ctx.fillRect(0, 0, W, H)
 
     const plotH = H - padT - padB
 
     // X 竖向网格 + 时间刻度（跟着曲线一起滚，是对的）
-    ctx.strokeStyle = '#22305a'
+    ctx.strokeStyle = '#ffffff'
     ctx.lineWidth = 1
-    ctx.fillStyle = '#6b7590'
+    ctx.fillStyle = '#9aabaa'
     ctx.font = '10px sans-serif'
     for (let s = 0; ; s += G) {
       const x = padL + s * PX
@@ -241,7 +241,7 @@ Page({
     }
 
     if (all.length === 0) {
-      ctx.fillStyle = '#55617a'
+      ctx.fillStyle = '#9aabaa'
       ctx.font = '12px sans-serif'
       ctx.fillText('点「开始记录」冻结基线后拉传感器（1 秒 1 点）', padL + 8, padT + 20)
       return
@@ -253,7 +253,7 @@ Page({
     const xOf = (t) => padL + t * PX
     const yOf = (f) => padT + plotH - ((f - lo) / span) * plotH
 
-    ctx.strokeStyle = '#00d4ff'
+    ctx.strokeStyle = '#7a9a8f'
     ctx.lineWidth = 2
     ctx.beginPath()
     pts.forEach((r, i) => {
@@ -264,7 +264,7 @@ Page({
     ctx.stroke()
 
     if (pts.length === 1) {
-      ctx.fillStyle = '#00d4ff'
+      ctx.fillStyle = '#7a9a8f'
       ctx.beginPath()
       ctx.arc(xOf(pts[0].t), yOf(pts[0].force), 3.5, 0, Math.PI * 2)
       ctx.fill()
@@ -272,12 +272,12 @@ Page({
       ctx.lineTo(xOf(pts[pts.length - 1].t), padT + plotH)
       ctx.lineTo(padL, padT + plotH)
       ctx.closePath()
-      ctx.fillStyle = 'rgba(0,212,255,0.12)'
+      ctx.fillStyle = 'rgba(63,111,112,.12)'
       ctx.fill()
     }
 
     const last = pts[pts.length - 1]
-    ctx.fillStyle = '#00ff88'
+    ctx.fillStyle = '#6f9e7b'
     ctx.beginPath()
     ctx.arc(xOf(last.t), yOf(last.force), 3, 0, Math.PI * 2)
     ctx.fill()

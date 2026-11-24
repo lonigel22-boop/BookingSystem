@@ -1,11 +1,46 @@
-import * as echarts from '../../../components/echarts-for-weixin-master/ec-canvas/echarts'
-import moment from 'moment'
+/* 房间统计 · 时间轴版
+   把原来的 echarts 散点图完全换成「房间 × 时间」进度条：
+   每个房间一行轨道，有课的时段亮成色块，宽度＝时长、位置＝开始时间。
+   纯 WXML/WXSS 渲染，不再依赖 ec-canvas / echarts（少一个大包、不会因 canvas 初始化失败空白）。
+   数据口径、筛选、日期、概览、下拉刷新、导出等原有能力全部保留。 */
+
+const moment = require('moment')
+
+/* 房间配色：柔和、区分度高，按房间顺序循环 */
+const PALETTE = [
+  '#3f6f70',
+  '#5a8d89',
+  '#6f9e7b',
+  '#8aa88f',
+  '#a08f72',
+  '#6b8f9c',
+  '#4e7f86',
+  '#9aab8f',
+  '#7f9b96',
+  '#b08968',
+  '#5f8f88',
+  '#8a9a76'
+];const HOUR = 60                 // 分钟
+const LANE_H = 56               // 每个重叠层高度（rpx）
+const TRACK_PAD = 16            // 轨道上下留白（rpx）
+
+function pad(n) { return String(n).padStart(2, '0') }
+function hhmm(min) {
+  const m = Math.max(0, Math.min(1440, Math.round(min)))
+  return pad(Math.floor(m / 60)) + ':' + pad(m % 60)
+}
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)) }
+
+/* 兼容 myCourses 里学生名的几种字段 */
+function studentOf(c) {
+  if (c.name) return c.name
+  const si = c.studentInfo
+  if (Array.isArray(si) && si[0]) return si[0].name || si[0].nickName || ''
+  return ''
+}
 
 Page({
 
-  /**
-   * 页面的初始数据
-   */
   data: {
     shopValue: 0,
     shopList: [],
@@ -15,13 +50,13 @@ Page({
     weekLabel: '',
     isToday: true,
     showPicker: false,
-    canvasShow: true,
     statTotal: 0,
     statRooms: 0,
     statRange: '—',
     statEmpty: false,
     canvasLoading: true,
-    ec: {}
+    timeline: null,        // ★ 时间轴数据
+    activeCourse: null     // ★ 点亮的课程详情
   },
 
   onLoad(options) {
@@ -38,7 +73,6 @@ Page({
 
   onUnload() {},
 
-  /* ★ 下拉刷新：主动让字典与课程缓存失效，保证能拿到最新排课 */
   onPullDownRefresh() {
     wx.stopPullDownRefresh()
     this.getShop()
@@ -48,7 +82,6 @@ Page({
 
   onShareAppMessage() {},
 
-  /* 顶部日期文案 */
   syncDateLabels() {
     const d = moment(this.data.date)
     const weeks = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
@@ -59,8 +92,6 @@ Page({
     })
   },
 
-  /* ★ 读取优化：门店是低频字典数据，10 分钟内跨页面复用，
-     反复进出本页不再重复读 shops 集合。 */
   getShop() {
     wx.showLoading({ title: '加载中' })
     wx.cloud.callFunction({ name: 'getShop', data: {} })
@@ -76,12 +107,10 @@ Page({
       .catch((e) => {
         console.log('获取门店失败', e)
         wx.hideLoading()
+        this.setData({ canvasLoading: false, statEmpty: true })
       })
   },
 
-  /* ★ 读取优化：按「校区 + 日期」缓存 60 秒，并在途合并。
-     原来 dropdownClose / closePopup / currentTime / onShow 都会各查一次，
-     同一条件连点几下就是几次全量读取，现在只真正读一次。 */
   initChart() {
     const shop = this.data.shopList[this.data.shopValue]
     if (!shop) return
@@ -102,22 +131,18 @@ Page({
         const r = resp && resp.result
         const raw = (r && r.result && r.result.data) || (r && r.data) || []
         this.applyStats(raw)
-        this.setData({ canvasLoading: false })
-        // 弹层关闭后 canvas 需要一帧才能重新渲染
-        if (typeof wx.nextTick === 'function') {
-          wx.nextTick(() => this.renderChart(raw))
-        } else {
-          this.renderChart(raw)
-        }
+        this.setData({
+          canvasLoading: false,
+          timeline: this.buildTimeline(raw, shop, startTime)
+        })
       })
       .catch(err => {
         console.log('获取房间统计失败', err)
-        this.setData({ canvasLoading: false, statEmpty: true })
+        this.setData({ canvasLoading: false, statEmpty: true, timeline: null })
         wx.hideLoading()
       })
   },
 
-  /* 顶部三格概览 + 空态 */
   applyStats(list) {
     const arr = Array.isArray(list) ? list : []
     const starts = arr.map(c => Number(c.startTime)).filter(n => !isNaN(n))
@@ -139,7 +164,144 @@ Page({
     })
   },
 
-  /* 门店 / 日期交互（原方法名与行为保留） */
+  /* ★ 核心：把课程列表变成「房间 × 时间」进度条数据 */
+  buildTimeline(raw, shop, dayStartTs) {
+    const arr = Array.isArray(raw) ? raw : []
+    const spanDay = 24 * HOUR
+
+    /* 1. 房间清单：门店配置的房间 + 当天实际用到的房间 */
+    const configured = (shop.room || '').split(',').map(s => s.trim()).filter(Boolean)
+    const used = []
+    arr.forEach(c => {
+      const r = (c.room || '').trim()
+      if (r && used.indexOf(r) < 0) used.push(r)
+    })
+    let roomNames = configured.slice()
+    used.forEach(r => { if (roomNames.indexOf(r) < 0) roomNames.push(r) })
+    if (!roomNames.length) roomNames = ['未指定房间']
+
+    /* 2. 课程归一化成「当天分钟数」 */
+    const courses = arr.map((c, i) => {
+      const s0 = Number(c.startTime)
+      let e0 = Number(c.endTime)
+      if (isNaN(s0)) return null
+      let s = clamp((s0 - dayStartTs) / 60000, 0, spanDay)
+      let e = isNaN(e0) ? s + 45 : clamp((e0 - dayStartTs) / 60000, 0, spanDay)
+      if (e <= s) e = Math.min(spanDay, s + 30)
+      const roomRaw = (c.room || '').trim()
+      return {
+        key: 'c' + i,
+        room: roomRaw && roomNames.indexOf(roomRaw) >= 0 ? roomRaw : roomNames[0],
+        s: s,
+        e: e,
+        timeText: hhmm(s) + '–' + hhmm(e),
+        startText: hhmm(s),
+        student: studentOf(c) || '—',
+        teacher: c.teacherName || '—',
+        course: c.lessonTitle || c.courseName || c.title || '课程',
+        shop: c.shopName || shop.text || ''
+      }
+    }).filter(Boolean)
+
+    /* 3. 时间轴范围：默认 08:00–22:00，被早课/晚课自动撑开 */
+    let axisStart = 8 * HOUR
+    let axisEnd = 22 * HOUR
+    courses.forEach(c => {
+      axisStart = Math.min(axisStart, Math.floor(c.s / HOUR) * HOUR)
+      axisEnd = Math.max(axisEnd, Math.ceil(c.e / HOUR) * HOUR)
+    })
+    axisStart = clamp(axisStart, 0, spanDay - 4 * HOUR)
+    axisEnd = clamp(axisEnd, axisStart + 4 * HOUR, spanDay)
+    const span = axisEnd - axisStart
+    const pct = (m) => ((m - axisStart) / span) * 100
+
+    /* 4. 刻度：每小时一条网格线，每 2 小时显示文字 */
+    const ticks = []
+    const firstTick = Math.ceil(axisStart / HOUR) * HOUR
+    for (let t = firstTick; t <= axisEnd; t += HOUR) {
+      ticks.push({
+        key: 't' + t,
+        left: +pct(t).toFixed(3),
+        label: hhmm(t),
+        showLabel: (t / HOUR) % 2 === 0
+      })
+    }
+
+    /* 5. 每个房间一行：重叠课程自动分层，互不遮挡 */
+    const rooms = roomNames.map((name, ri) => {
+      const color = PALETTE[ri % PALETTE.length]
+      const list = courses.filter(c => c.room === name).sort((a, b) => a.s - b.s)
+      const laneEnds = []
+      const blocks = list.map(c => {
+        let lane = laneEnds.findIndex(end => end <= c.s + 0.01)
+        if (lane < 0) { lane = laneEnds.length; laneEnds.push(0) }
+        laneEnds[lane] = c.e
+        const left = +pct(c.s).toFixed(3)
+        const width = +Math.max(1.6, pct(c.e) - pct(c.s)).toFixed(3)
+        return {
+          key: c.key,
+          left: left,
+          width: width,
+          top: lane * LANE_H + TRACK_PAD / 2,
+          timeText: c.timeText,
+          startText: c.startText,
+          student: c.student,
+          teacher: c.teacher,
+          course: c.course,
+          shop: c.shop,
+          shortText: width >= 15 ? c.timeText : (width >= 7 ? c.startText : '')
+        }
+      })
+      const laneCount = Math.max(1, laneEnds.length)
+      return {
+        name: name,
+        color: color,
+        count: list.length,
+        blocks: blocks,
+        trackH: laneCount * LANE_H + TRACK_PAD
+      }
+    })
+
+    /* 6. 今天的「现在」竖线 */
+    let nowLeft = -1
+    if (this.data.isToday) {
+      const nowMin = (Date.now() - dayStartTs) / 60000
+      if (nowMin >= axisStart && nowMin <= axisEnd) nowLeft = +pct(nowMin).toFixed(3)
+    }
+
+    return {
+      rooms: rooms,
+      ticks: ticks,
+      nowLeft: nowLeft,
+      hasNow: nowLeft >= 0,
+      axisText: hhmm(axisStart) + ' – ' + hhmm(axisEnd)
+    }
+  },
+
+  /* 点亮色块 → 详情卡 */
+  onBlockTap(e) {
+    const ds = e.currentTarget.dataset || {}
+    const room = (this.data.timeline && this.data.timeline.rooms || []).find(r => r.name === ds.room)
+    if (!room) return
+    const b = room.blocks.find(x => x.key === ds.key)
+    if (!b) return
+    this.setData({
+      activeCourse: {
+        room: room.name,
+        color: room.color,
+        timeText: b.timeText,
+        student: b.student,
+        teacher: b.teacher,
+        course: b.course,
+        shop: b.shop,
+        dayLabel: this.data.dateLabel
+      }
+    })
+  },
+  closeDetail() { this.setData({ activeCourse: null }) },
+  noop() {},
+
+  /* 门店 / 日期交互（方法名与行为保留） */
   dropdownChange(e) {
     const idx = Number(e.detail) || 0
     const list = this.data.shopList
@@ -149,188 +311,25 @@ Page({
     })
     this.initChart()
   },
-  dropdownOpen() {
-    this.setData({ canvasShow: false })
-  },
-  dropdownClose() {
-    this.setData({ canvasShow: true })
-    this.initChart()
-  },
-  pickerDisplay() {
-    this.setData({ showPicker: true, canvasShow: false })
-  },
-  closePopup() {
-    this.setData({ showPicker: false, canvasShow: true })
-    this.initChart()
-  },
+  dropdownOpen() {},
+  dropdownClose() { this.initChart() },
+  pickerDisplay() { this.setData({ showPicker: true }) },
+  closePopup() { this.setData({ showPicker: false }); this.initChart() },
   currentTime(e) {
     this.setData({
       date: e.detail.currentTime,
-      showPicker: false,
-      canvasShow: true
+      showPicker: false
     })
     this.syncDateLabels()
     this.initChart()
   },
   goToday() {
-    this.setData({ date: moment().format('YYYY-MM-DD'), canvasShow: true })
+    this.setData({ date: moment().format('YYYY-MM-DD') })
     this.syncDateLabels()
     this.initChart()
   },
-  /* 手动刷新：绕过 60 秒缓存重新读，用于刚排完课 */
   refresh() {
-    this.setData({ canvasShow: true })
     this.initChart()
     wx.showToast({ title: '已刷新', icon: 'none', duration: 1200 })
-  },
-
-  /* 图表渲染：数据口径与原版完全一致，只做视觉与健壮性打磨 */
-  renderChart(data) {
-    if (this.data.statEmpty) return
-    const shop = this.data.shopList[this.data.shopValue]
-    if (!shop) return
-    const ecComponent = this.selectComponent('#mychart-statistics')
-    if (!ecComponent) {
-      /* 弹层关闭后 canvas 可能晚一帧才重建，重试一次，避免空白图 */
-      if (!this._renderRetry) {
-        this._renderRetry = setTimeout(() => {
-          this._renderRetry = null
-          this.renderChart(data)
-        }, 120)
-      }
-      return
-    }
-    if (this._renderRetry) { clearTimeout(this._renderRetry); this._renderRetry = null }
-
-    const dataList = Array.isArray(data) ? data : ((data && data.data) || [])
-    const rgb = [
-      ['rgba(241, 196, 15, 0.5)', 'rgb(255, 224, 130)', 'rgb(230, 201, 100)'],
-      ['rgba(112, 173, 71, 0.8)', 'rgb(140, 200, 100)', 'rgb(115, 170, 75)'],
-      ['rgba(220, 57, 68, 0.7)', 'rgb(255, 100, 110)', 'rgb(230, 70, 80)'],
-      ['rgba(76, 175, 80, 0.6)', 'rgb(100, 200, 100)', 'rgb(80, 180, 85)'],
-      ['rgba(231, 76, 60, 0.9)', 'rgb(255, 110, 100)', 'rgb(240, 85, 75)'],
-      ['rgba(41, 128, 185, 0.5)', 'rgb(100, 160, 220)', 'rgb(60, 140, 200)'],
-      ['rgba(205, 133, 63, 0.7)', 'rgb(230, 160, 100)', 'rgb(210, 145, 80)'],
-      ['rgba(153, 63, 0, 0.6)', 'rgb(180, 80, 20)', 'rgb(165, 70, 10)'],
-      ['rgba(54, 162, 235, 0.8)', 'rgb(100, 180, 255)', 'rgb(70, 165, 240)'],
-      ['rgba(106, 90, 205, 0.5)', 'rgb(130, 120, 220)', 'rgb(115, 105, 200)'],
-      ['rgba(255, 140, 0, 0.7)', 'rgb(255, 160, 50)', 'rgb(240, 150, 30)'],
-      ['rgba(154, 205, 50, 0.9)', 'rgb(180, 220, 100)', 'rgb(165, 210, 75)'],
-      ['rgba(140, 140, 140, 0.6)', 'rgb(160, 160, 160)', 'rgb(150, 150, 150)'],
-      ['rgba(230, 126, 34, 0.5)', 'rgb(255, 150, 80)', 'rgb(240, 140, 60)'],
-      ['rgba(123, 20, 230, 0.8)', 'rgb(140, 50, 250)', 'rgb(130, 40, 235)'],
-      ['rgba(0, 139, 139, 0.7)', 'rgb(50, 160, 160)', 'rgb(30, 150, 150)'],
-      ['rgba(210, 105, 30, 0.6)', 'rgb(230, 130, 60)', 'rgb(215, 120, 50)'],
-      ['rgba(173, 255, 47, 0.9)', 'rgb(200, 255, 100)', 'rgb(185, 250, 75)']
-    ]
-
-    const roomsString = shop.room
-    const uniqueRooms = roomsString ? roomsString.split(',') : []
-
-    const seriesData = uniqueRooms.map((room, index) => {
-      const palette = rgb[index % rgb.length]
-      const valueData = dataList
-        .filter(res => res.room === room)
-        .map(res => {
-          const startTimeHours = moment(new Date(res.startTime)).format('HH').toString()
-          const endTimeSecond = moment(new Date(res.startTime)).format('mm').toString()
-          const startTime = moment(new Date(res.startTime)).format('HH:mm')
-          const EndTime = moment(new Date(res.endTime)).format('HH:mm')
-          return [
-            index,
-            startTimeHours + endTimeSecond,
-            res.teacherName ? ('教师：' + res.teacherName) : '',
-            res.name ? ('学生：' + res.name) : '',
-            room,
-            startTime,
-            EndTime
-          ]
-        })
-      return {
-        name: room,
-        type: 'scatter',
-        data: valueData,
-        symbolSize: function () { return 18 },
-        itemStyle: {
-          shadowBlur: 8,
-          shadowColor: 'rgba(63, 111, 112, 0.25)',
-          shadowOffsetY: 2,
-          color: new echarts.graphic.RadialGradient(0.4, 0.3, 1, [
-            { offset: 0, color: palette[1] },
-            { offset: 1, color: palette[2] }
-          ]),
-          borderRadius: 4
-        }
-      }
-    })
-
-    const option = {
-      tooltip: {
-        trigger: 'axis',
-        backgroundColor: 'rgba(31, 45, 45, 0.94)',
-        borderColor: '#3f6f70',
-        borderWidth: 1,
-        textStyle: { color: '#f0f0f0', fontSize: 12 },
-        axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(63, 111, 112, 0.12)' } },
-        position: ['10%', '50%'],
-        formatter: function (params) {
-          if (!params || !params.length) return ''
-          let content = `{title|${params[0].seriesName}}`
-          params.forEach(res => {
-            if (res.data && res.data.length) {
-              content += `\n{time|➤} {time|${res.data[5]}~${res.data[6]}} {teacher|${res.data[2]}} {student|${res.data[3]}}`
-            }
-          })
-          return content
-        }
-      },
-      grid: { left: '3%', right: '4%', bottom: '3%', top: 34, containLabel: true },
-      legend: {
-        textStyle: { color: '#6b7d7d', fontSize: 11 },
-        icon: 'circle',
-        itemWidth: 9,
-        itemHeight: 9,
-        itemGap: 12,
-        data: uniqueRooms,
-        type: 'scroll'
-      },
-      xAxis: {
-        type: 'value',
-        scale: true,
-        axisTick: { show: false },
-        axisLine: { lineStyle: { color: '#d8e3e2' } },
-        axisLabel: {
-          color: '#7b8b8b',
-          fontSize: 10,
-          formatter: function (value) { return uniqueRooms[value] || '' }
-        },
-        splitLine: { show: false }
-      },
-      yAxis: {
-        axisTick: { show: false },
-        axisLine: { show: false },
-        interval: 200,
-        min: 600,
-        max: 2400,
-        splitLine: { show: true, lineStyle: { color: '#eef3f2', type: 'dashed' } },
-        axisLabel: {
-          color: '#7b8b8b',
-          fontSize: 10,
-          formatter: function (value) {
-            const hours = Math.floor(value / 100)
-            const minutes = value % 100
-            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
-          }
-        }
-      },
-      series: seriesData
-    }
-
-    ecComponent.init((canvas, width, height) => {
-      const chart = echarts.init(canvas, null, { width: width, height: height })
-      canvas.setChart(chart)
-      chart.setOption(option)
-      return chart
-    })
   }
 })

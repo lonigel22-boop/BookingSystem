@@ -9,7 +9,7 @@
             <van-button class="sm-container-shop-handle-btn" slot="button" size="small" type="primary" color="#3f6f70" data-item="{{ item }}" bind:tap="shopEdit">
               编辑
             </van-button>
-            <van-button class="sm-container-shop-handle-btn" slot="button" size="small" type="primary" color="#ff0000" data-item="{{ item }}" bind:tap="deleteShop">
+            <van-button class="sm-container-shop-handle-btn" slot="button" size="small" type="primary" color="#e05a4f" data-item="{{ item }}" bind:tap="deleteShop">
               删除
             </van-button>
           </view>

@@ -1,4 +1,7 @@
 {
   "usingComponents": {},
-  "navigationBarTitleText": "哇哦音乐腰带系统" 
+  "navigationBarTitleText": "哇哦音乐腰带系统",
+  "navigationBarBackgroundColor": "#ffffff",
+  "navigationBarTextStyle": "black",
+  "backgroundColor": "#f5f5f5"
 }

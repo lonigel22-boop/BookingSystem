@@ -1,6 +1,6 @@
 .calendar-container {
   padding: 20rpx;
-  background-color: #fff;
+  background-color: #ffffff;
   min-height: 100vh;
 }
 
@@ -9,7 +9,7 @@
 }
 
 .calendar-body {
-  background: #fff;
+  background: #ffffff;
   border-radius: 12rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
   padding: 20rpx;
@@ -34,24 +34,24 @@
 }
 
 .calendar-day:active {
-  background-color: rgba(63, 111, 112, 0.1);
+  background-color: rgba(138,168,143,0.1);
 }
 
 .current-month {
-  color: #333;
+  color: #333333;
 }
 
 .other-month {
-  color: #ccc;
+  color: #cccccc;
 }
 
 .weekend {
   background-color: #3f6f70;
-  color: #fff;
+  color: #ffffff;
 }
 
 .weekend .course-dot {
-  background-color: #fff;
+  background-color: #ffffff;
 }
 
 .day-number {
@@ -78,7 +78,7 @@
 
 .course-detail-section {
   margin-top: 30rpx;
-  background: #fff;
+  background: #ffffff;
   border-radius: 12rpx;
   box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.1);
   padding: 20rpx;
@@ -87,11 +87,11 @@
 .day-detail-header {
   font-size: 32rpx;
   font-weight: bold;
-  color: #333;
+  color: #333333;
   margin-bottom: 20rpx;
   text-align: center;
   padding-bottom: 20rpx;
-  border-bottom: 2rpx solid #eee;
+  border-bottom: 2rpx solid #e6eceb;
 }
 
 .day-detail-content {
@@ -102,7 +102,7 @@
 .course-item {
   display: flex;
   padding: 20rpx 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #e6eceb;
 }
 
 .course-time-section {
@@ -131,36 +131,51 @@
 
 .course-title {
   font-size: 28rpx;
-  color: #333;
+  color: #333333;
   margin-bottom: 8rpx;
 }
 
 .course-location {
   font-size: 24rpx;
-  color: #666;
+  color: #666666;
 }
 
 .no-course {
   text-align: center;
-  color: #999;
+  color: #9aabaa;
   padding: 40rpx 0;
   font-size: 28rpx;
 }
 .course-title {
   font-size: 30rpx;
-  color: #333;
+  color: #333333;
   margin-bottom: 8rpx;
 }
 
 .course-location {
   font-size: 26rpx;
-  color: #666;
+  color: #666666;
   margin: 4rpx 0;
 }
 
 .no-courses {
   text-align: center;
-  color: #999;
+  color: #9aabaa;
   padding: 40rpx 0;
   font-size: 28rpx;
 }
+
+/* ===== 全站统一主题收尾层（ClassHourCatch 风格） ===== */
+page { background: #f5f5f5; color: #333333; }
+.section-title, .page-title {
+  color: #3f6f70;
+  border-left: 8rpx solid #3f6f70;
+  padding-left: 20rpx;
+  font-weight: bold;
+}
+button[type="primary"], .primary-btn, .export-btn, .submit-btn,
+.van-button--primary { background: #3f6f70; border-color: #3f6f70; color: #ffffff; }
+button[disabled], .export-btn[disabled] { background: #cccccc; color: #ffffff; }
+/* 深色页面上翻浅色后：提示条与主色按钮保持白字，避免白底白字 */
+.toast { background: #3f6f70; color: #ffffff; border-color: #335b5c; }
+.act.on, .dact.on, .fbtn.on, .mtab.on, .mebar-btn { color: #ffffff; }

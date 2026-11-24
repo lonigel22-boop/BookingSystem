@@ -3,7 +3,7 @@
 	justify-content: space-between;
 	align-items: center;
 	padding: 20rpx 30rpx;
-	border-bottom: solid 1px #e4e4e4;
+	border-bottom: solid 1px #e6eceb;
 }
 
 .user-info .item .item-img{
@@ -13,12 +13,12 @@
 }
 
 .user-info .item .item-header {
-  background: #3f6f6f;
+  background: #8aa88f;
   border-radius: 30rpx;
 }
 
 .user-info .item  input{
-	/* border: solid 1px #cdcdcd; */
+	/* border: solid 1px #e6eceb; */
 	width: 60%;
 	height: 70rpx;
 	padding: 0 5rpx;
@@ -32,5 +32,20 @@
 	line-height: 70rpx;
 	border-radius: 140rpx;
   font-size: 36rpx;
-  background: #3f6f6f;
+  background: #8aa88f;
 }
+
+/* ===== 全站统一主题收尾层（ClassHourCatch 风格） ===== */
+page { background: #f5f5f5; color: #333333; }
+.section-title, .page-title {
+  color: #3f6f70;
+  border-left: 8rpx solid #3f6f70;
+  padding-left: 20rpx;
+  font-weight: bold;
+}
+button[type="primary"], .primary-btn, .export-btn, .submit-btn,
+.van-button--primary { background: #3f6f70; border-color: #3f6f70; color: #ffffff; }
+button[disabled], .export-btn[disabled] { background: #cccccc; color: #ffffff; }
+/* 深色页面上翻浅色后：提示条与主色按钮保持白字，避免白底白字 */
+.toast { background: #3f6f70; color: #ffffff; border-color: #335b5c; }
+.act.on, .dact.on, .fbtn.on, .mtab.on, .mebar-btn { color: #ffffff; }

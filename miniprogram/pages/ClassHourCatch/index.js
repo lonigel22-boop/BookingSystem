@@ -1,6 +1,20 @@
 const app = getApp()
 const moment = require('moment')
-const readCache = require('../../utils/readCache.js')
+
+/* ★ 页面可打开性加固：
+   这个页面之前在 app.json 里漏注册，点「课时导出」会毫无反应（已补注册）。
+   顺手让 readCache 变成可选依赖：即使某次部署漏了 utils/readCache.js，
+   页面也能正常加载，只是少了跨页缓存，不会再整页打不开。 */
+let readCache = null
+try {
+  readCache = require('../../utils/readCache.js')
+} catch (e) {
+  readCache = null
+}
+const callRead = (name, data, ttl) =>
+  (readCache && readCache.cachedRead)
+    ? readCache.cachedRead(name, data, ttl)
+    : wx.cloud.callFunction({ name: name, data: data || {} })
 
 Page({
   data: {
@@ -15,13 +29,19 @@ Page({
     this.getTeachers()
   },
 
-  // 获取教师列表（★ 字典缓存：10 分钟内跨页面复用，不重复读 teachers）
+  // 获取教师列表（字典缓存：10 分钟内跨页面复用；模块缺失时自动直连）
   getTeachers() {
     wx.showLoading({ title: '加载中', mask: true })
-    readCache.cachedRead('getTeacheres', { page: 0, pageSize: 100 }, 600)
+    callRead('getTeacheres', { name: '', page: 0, pageSize: 100 }, 600)
       .then((resp) => {
-        this.setData({ teachers: resp.result || [] })
+        const r = resp && resp.result
+        // 兼容云函数直接返回数组 / 返回 { data: [] } 两种结构
+        const list = Array.isArray(r) ? r : (r && Array.isArray(r.data) ? r.data : [])
+        this.setData({ teachers: list })
         wx.hideLoading()
+        if (!list.length) {
+          wx.showToast({ title: '暂无教师数据', icon: 'none' })
+        }
       })
       .catch((e) => {
         console.error('获取教师列表失败', e)
@@ -33,24 +53,19 @@ Page({
   // 选择教师
   onTeacherSelect(e) {
     const teacher = e.currentTarget.dataset.teacher
-    this.setData({
-      selectedTeacher: teacher
-    })
+    if (!teacher) return
+    this.setData({ selectedTeacher: teacher })
     this.fetchCourseList()
   },
 
   // 选择日期
   onDateChange(e) {
-    this.setData({
-      selectedDate: e.detail.value
-    })
+    this.setData({ selectedDate: e.detail.value })
     this.fetchCourseList()
   },
 
-  /* ★ 读取优化：把「查课程」抽成一层带缓存的原始加载器。
-     原来「看列表」和「导出」各发一次完全相同的 getMyCourse 请求，
-     用户查完再导出 = 两次云函数调用 + 6 次数据库读。
-     现在按 教师+月份 复用同一份原始数据，只查一次；条件变了自动重查。 */
+  /* 把「查课程」抽成一层带缓存的原始加载器：
+     看列表和导出复用同一份原始数据，只查一次；条件变了自动重查。 */
   loadRawCourses() {
     const teacher = this.data.selectedTeacher
     const dateStr = this.data.selectedDate
@@ -74,13 +89,13 @@ Page({
         order: { string: 'startTime', order: 'asc' }
       }
     }).then(res => {
-      if (!res.result || !res.result.result || !res.result.result.data) {
-        throw new Error('课程数据格式错误')
-      }
+      const r = res && res.result
+      const list = (r && r.result && r.result.data) || (r && r.data) || []
+      if (!Array.isArray(list)) throw new Error('课程数据格式错误')
       this._rawKey = key
-      this._rawCourses = copy(res.result.result.data)
+      this._rawCourses = copy(list)
       this._rawInflight = null
-      return copy(res.result.result.data)
+      return copy(list)
     }).catch(e => {
       this._rawInflight = null
       throw e
@@ -113,7 +128,7 @@ Page({
     })
   },
 
-  // 导出课时（★ 复用同一份原始数据，不再重复查库）
+  // 导出课时（复用同一份原始数据，不再重复查库）
   exportClassHours() {
     if (!this.data.selectedTeacher || !this.data.selectedDate) {
       wx.showToast({ title: '请选择教师和日期', icon: 'none' })

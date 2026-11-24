@@ -13,7 +13,7 @@
       {{item.expense_level_2 ? (' / ' + item.expense_level_2 + '元') : '-'+'元'}}
       {{item.expense_level_3 ? (' / ' + item.expense_level_3 + '元') : '-'+'元'}}</view>
       <view class="courseManagment-content-course-item-handle">
-        <van-button class="courseManagment-content-course-item-handle-btn" color="#ff0000" size="small" round data-data="{{ item }}" bind:tap="deleteCourse">删除</van-button>
+        <van-button class="courseManagment-content-course-item-handle-btn" color="#e05a4f" size="small" round data-data="{{ item }}" bind:tap="deleteCourse">删除</van-button>
         <van-button class="courseManagment-content-course-item-handle-btn" color="#3f6f70" size="small" round data-data="{{ item }}" bind:tap="editCourse">编辑</van-button>
       </view>
     </view>

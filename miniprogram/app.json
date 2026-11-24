@@ -5,6 +5,7 @@
     "pages/certificate/pages/certificateLogin/index",
     "pages/certificate/pages/certificateManage/index",
     "pages/course/index",
+    "pages/ClassHourCatch/index",
     "pages/systemManagement/myStudentAdd/index",
     "pages/systemManagement/changePassword/index",
     "pages/systemManagement/list/index",

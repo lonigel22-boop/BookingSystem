@@ -55,12 +55,12 @@
     </view>
   </view>
 
-  <!-- 图表卡片 -->
+  <!-- ★ 房间时段分布：时间轴进度条 -->
   <view class="card chart-card">
     <view class="chart-head">
       <view class="chart-head-l">
         <view class="chart-title">房间时段分布</view>
-        <view class="chart-tip">纵轴为时间 · 轻触圆点看课程详情</view>
+        <view class="chart-tip">亮色＝该时段有课 · 轻触查看课程详情</view>
       </view>
       <view class="chart-dot"></view>
     </view>
@@ -76,14 +76,83 @@
       <view class="state-d">换个日期或校区看看吧</view>
     </view>
 
-    <ec-canvas
-      wx:elif="{{canvasShow}}"
-      class="chart-canvas"
-      id="mychart-statistics"
-      canvas-id="mychart-bar"></ec-canvas>
+    <block wx:else>
+      <!-- 时间刻度尺 -->
+      <view class="tl-scale">
+        <view class="tl-scale-spacer"></view>
+        <view class="tl-scale-track">
+          <view class="tl-tick" wx:for="{{timeline.ticks}}" wx:key="key" style="left:{{item.left}}%">
+            <text wx:if="{{item.showLabel}}" class="tl-tick-label">{{item.label}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 每个房间一行：轨道 + 亮块 + 明细 -->
+      <view class="tl-row" wx:for="{{timeline.rooms}}" wx:key="name" wx:for-item="room">
+        <view class="tl-line">
+          <view class="tl-room">
+            <view class="tl-room-dot" style="background:{{room.color}}"></view>
+            <view class="tl-room-name">{{room.name}}</view>
+            <view class="tl-room-count">{{room.count}} 节</view>
+          </view>
+          <view class="tl-track" style="height:{{room.trackH}}rpx">
+            <view class="tl-grid" wx:for="{{timeline.ticks}}" wx:key="key" wx:for-item="tk" style="left:{{tk.left}}%"></view>
+            <view wx:if="{{timeline.hasNow}}" class="tl-now" style="left:{{timeline.nowLeft}}%"></view>
+            <view
+              class="tl-block"
+              wx:for="{{room.blocks}}"
+              wx:key="key"
+              wx:for-item="blk"
+              style="left:{{blk.left}}%;width:{{blk.width}}%;top:{{blk.top}}rpx;background:{{room.color}}"
+              bind:tap="onBlockTap"
+              data-room="{{room.name}}"
+              data-key="{{blk.key}}">
+              <text class="tl-block-txt">{{blk.shortText}}</text>
+            </view>
+          </view>
+        </view>
+
+        <view class="tl-detail-list" wx:if="{{room.blocks.length}}">
+          <view
+            class="tl-chip"
+            wx:for="{{room.blocks}}"
+            wx:key="key"
+            wx:for-item="blk"
+            bind:tap="onBlockTap"
+            data-room="{{room.name}}"
+            data-key="{{blk.key}}">
+            <text class="tl-chip-time">{{blk.timeText}}</text>
+            <text class="tl-chip-name">{{blk.student}}</text>
+          </view>
+        </view>
+        <view class="tl-room-free" wx:else>空闲</view>
+      </view>
+
+      <view class="tl-legend">
+        <text class="tl-legend-txt">时间范围 {{timeline.axisText}}</text>
+        <text class="tl-legend-txt" wx:if="{{timeline.hasNow}}">· 红线＝现在</text>
+      </view>
+    </block>
   </view>
 
   <view class="foot-hint">数据按所选校区与日期实时统计 · 下拉页面可强制刷新</view>
 
   <date-time-picker show="{{ showPicker }}" bind:currentTime="currentTime" bind:closePopup="closePopup" />
+
+  <!-- 课程详情浮层 -->
+  <view class="cd-mask" wx:if="{{activeCourse}}" bind:tap="closeDetail" catchtouchmove="noop"></view>
+  <view class="cd-sheet" wx:if="{{activeCourse}}" catchtouchmove="noop">
+    <view class="cd-bar"></view>
+    <view class="cd-head">
+      <view class="cd-dot" style="background:{{activeCourse.color}}"></view>
+      <view class="cd-room">{{activeCourse.room}}</view>
+      <view class="cd-close" bind:tap="closeDetail">✕</view>
+    </view>
+    <view class="cd-time">{{activeCourse.timeText}}</view>
+    <view class="cd-date">{{activeCourse.dayLabel}}</view>
+    <view class="cd-line"><text class="cd-k">课程</text><text class="cd-v">{{activeCourse.course}}</text></view>
+    <view class="cd-line"><text class="cd-k">教师</text><text class="cd-v">{{activeCourse.teacher}}</text></view>
+    <view class="cd-line"><text class="cd-k">学生</text><text class="cd-v">{{activeCourse.student}}</text></view>
+    <view class="cd-line"><text class="cd-k">校区</text><text class="cd-v">{{activeCourse.shop}}</text></view>
+  </view>
 </view>

@@ -38,7 +38,7 @@
                 </van-cell>
               </van-cell-group>
               <view slot="right" class="myClassSchedule-container-list-swipe">
-                <van-button class="myClassSchedule-container-list-swipe-btn" color="#ff0000" size="small" data-data="{{ __item }}" bind:tap="deleteMyCourse">取消</van-button>
+                <van-button class="myClassSchedule-container-list-swipe-btn" color="#e05a4f" size="small" data-data="{{ __item }}" bind:tap="deleteMyCourse">取消</van-button>
                 <van-button class="myClassSchedule-container-list-swipe-btn" color="#3f6f70" size="small" data-data="{{ __item }}" bind:tap="{{ __item.finished ? 'editMyCourse' : 'editMyCourse' }}">修改</van-button>
                 <van-button class="myClassSchedule-container-list-swipe-btn" color="#3f6f70" size="small" data-data="{{ __item }}" bind:tap="showNoteDialog">备注</van-button>
               </view>
@@ -54,7 +54,7 @@
         <view slot="right" class="student-swipe-btns">
           <van-button 
             class="student-swipe-btn" 
-            color="{{item.isTop ? '#ff0000' : '#3f6f70'}}" 
+            color="{{item.isTop ? '#e05a4f' : '#3f6f70'}}" 
             size="small" 
             bind:tap="toggleTop" 
             data-item="{{item}}"
