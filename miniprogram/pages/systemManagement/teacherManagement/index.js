@@ -1,3 +1,4 @@
+const readCache = require('../../../utils/readCache.js')
 Page({
 
   /**
@@ -93,14 +94,12 @@ Page({
       title: '加载中'
     })
     const _this = this
-    wx.cloud.callFunction({
-      name: 'getTeacheres',
-      data: {
-        name: _this.data.teacherName,
-        page: _this.data.teacherPage,
-        pageSize: _this.data.teacherPageSize
-      }
-    }).then((resp) => {
+    /* ★ 老师名单缓存：分页 / 搜索按参数隔离；写操作成功后 invalidate */
+    readCache.cachedRead('getTeacheres', {
+      name: _this.data.teacherName,
+      page: _this.data.teacherPage,
+      pageSize: _this.data.teacherPageSize
+    }, 300).then((resp) => {
       console.log('结果', resp)
       const data = _this.data.teachers.concat(resp.result)
       data.forEach((res, i) => {
@@ -191,6 +190,7 @@ Page({
       }
     }).then((res) => {
       console.log('更新成功', res)
+      readCache.invalidate('getTeacheres')
       wx.hideLoading()
    }).catch((e) => {
       wx.hideLoading()
@@ -299,6 +299,7 @@ Page({
         checkUsers: [],
         showUser: false
       })
+      readCache.invalidate('getTeacheres')
       _this.searchTeachers()
       wx.hideLoading()
    }).catch((e) => {
@@ -323,6 +324,7 @@ Page({
               _openid: data._openid
             }
           }).then((re) => {
+            readCache.invalidate('getTeacheres')
             _this.searchTeachers()
             wx.hideLoading()
          }).catch((e) => {

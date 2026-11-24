@@ -1,5 +1,6 @@
 //获取应用实例
 const app = getApp()
+const readCache = require('../../utils/readCache.js')
 Page({
 
     /**
@@ -106,6 +107,20 @@ Page({
     },
     getAndAddUser(result, el) {
       const _this = this
+      /* ★ 读取优化：与首页共用按 openid 隔离的身份档案缓存（60 秒）。
+         两个 tab 来回切不再各自读一次 users 表；换账号自动失效。 */
+      const cachedUser = readCache.getIdentity(result.openid)
+      if (cachedUser) {
+        wx.setStorageSync('userInfo', cachedUser)
+        _this.setData({
+          nickName: cachedUser.nickName,
+          avatarUrl: cachedUser.avatarUrl,
+          name: cachedUser.name,
+          userInfo: cachedUser
+        })
+        wx.hideLoading()
+        return
+      }
       wx.cloud.callFunction({
         name: 'getUsers',
         data: {
@@ -117,6 +132,7 @@ Page({
         console.log('查询用户结果', re)
         if (re.result && re.result.length) {
           wx.setStorageSync('userInfo', re.result[0])
+          readCache.setIdentity(result.openid, re.result[0], 60)
           _this.setData({
             nickName: re.result[0].nickName,
             avatarUrl: re.result[0].avatarUrl,
@@ -144,7 +160,9 @@ Page({
           }).then((re) => {
             console.log('添加用户结果', re)
             const data = re.result.data
-            wx.setStorageSync('userInfo', data && data.length ? data[0] : {})
+            const newUser = data && data.length ? data[0] : {}
+            wx.setStorageSync('userInfo', newUser)
+            readCache.setIdentity(result.openid, newUser, 60)
             _this.setData({
               nickName: data && data.length ? data[0].nickName : '',
               avatarUrl: data && data.length ? data[0].avatarUrl : '',

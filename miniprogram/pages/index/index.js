@@ -1,6 +1,7 @@
 const { envList } = require('../../envList.js') 
 import Dialog from '@vant/weapp/dialog/dialog' 
 import moment from'moment' 
+const readCache = require('../../utils/readCache.js') 
 //获取应用实例 
 const app = getApp() 
  
@@ -62,48 +63,73 @@ Page({
     });
   },
 
-  /* 获取当天课程数据（只查「当前微信本人」，且只在确认是老师后调用） */
+  /* ★ 一次查课，同时产出「今日课程版面」与「上课前 6 小时提醒」。
+     原来这里是两个独立的 getMyCourse 云函数调用（今日全天 + 6~8 小时窗口），
+     每进一次首页就多一次云函数调用 + 3 次数据库读。
+     现在查询范围取「今天 00:00 ~ max(今天 23:59, 现在+8 小时)」，
+     一次拿回全部数据，前端各自过滤 —— 结果完全等价，读取减半。
+     仍只认 getWXContext 给的当前微信真 openid（上一轮串号修复不变）。 */
   fetchTodayCourses(openid, gen) {
     const g = (gen === undefined) ? this._identityGen : gen
     if (!this._isTeacherMe || !openid) {
-      this.setData({ todayCourses: [] })
+      this.setData({ todayCourses: [], dialogShow: false, dialogMessage: [] })
       return
     }
-    const today = moment()
-    const startTime = today.startOf('day').valueOf()
-    const endTime = today.endOf('day').valueOf()
+    const now = Date.now()
+    const todayStart = moment().startOf('day').valueOf()
+    const todayEnd = moment().endOf('day').valueOf()
+    const winStart = now + 6 * 60 * 60 * 1000
+    const winEnd = now + 8 * 60 * 60 * 1000
+    // 晚上时 6~8 小时窗口会跨到明天，查询上界要覆盖到窗口末端
+    const queryEnd = Math.max(todayEnd, winEnd + 60 * 1000)
+
     wx.cloud.callFunction({
       name: 'getMyCourse',
       data: {
-        startTime: startTime,
-        endTime: endTime,
-        // ★ 用云函数返回的当前微信真 openid，不再读本地缓存
+        startTime: todayStart,
+        endTime: queryEnd,
         teacherOpenid: openid,
-        order: {
-          string: 'startTime',
-          order: 'asc'
-        }
+        order: { string: 'startTime', order: 'asc' }
       }
     }).then(resp => {
       // 身份已切换 / 响应乱序回来 → 一律丢弃，绝不覆盖当前版面
       if (g !== this._identityGen || !this._isTeacherMe) return
       const r = resp && resp.result
-      // 正常返回 result.result.data；兼容云函数「非老师」分支的 result.data
       const raw = (r && r.result && r.result.data) || (r && r.data) || []
-      const courses = (Array.isArray(raw) ? raw : []).map(course => ({
-        ...course,
-        startTime: moment(new Date(course.startTime)).format('HH:mm'),
-        location: `${course.shopName} ${course.room}`,
-        studentName: course.name || '未知学生'
-      }))
-      // 空数组也要 setData：身份切换时把上一次的版面清掉
-      this.setData({ todayCourses: courses })
+      const list = Array.isArray(raw) ? raw : []
+
+      // ① 今日课程版面：只保留落在今天范围内的（查询可能带出明天凌晨的课）
+      const courses = list
+        .filter(c => Number(c.startTime) <= todayEnd)
+        .map(course => ({
+          ...course,
+          startTime: moment(new Date(course.startTime)).format('HH:mm'),
+          location: `${course.shopName} ${course.room}`,
+          studentName: course.name || '未知学生'
+        }))
+
+      // ② 上课前 6 小时提醒：从同一份数据里筛窗口，仍是按时间升序取前 3
+      const reminder = list
+        .filter(c => Number(c.startTime) >= winStart && Number(c.startTime) <= winEnd)
+        .slice(0, 3)
+        .map(c => ({
+          ...c,
+          startTime: moment(new Date(c.startTime)).format('MM-DD HH:mm:ss'),
+          studentName: c.name || '未知学生'
+        }))
+
+      // 空数组也要 setData：身份切换时把上一次的版面/提醒清掉
+      this.setData({
+        todayCourses: courses,
+        dialogShow: reminder.length > 0,
+        dialogMessage: reminder
+      })
     }).catch(err => {
       console.log('获取今日课程失败（已清空版面）', err)
       if (g !== this._identityGen) return
-      // 静默清空：学生 openid 在 teachers 表查不到时云函数会报错，
+      // 静默清空：学生 openid 在 teachers 表查不到时云函数会返回空，
       // 不该让学生看到「获取课程数据失败」的提示
-      this.setData({ todayCourses: [] })
+      this.setData({ todayCourses: [], dialogShow: false, dialogMessage: [] })
     })
   },
 
@@ -174,6 +200,22 @@ Page({
  
   getAndAddUser(result, el) { 
     const _this = this 
+    /* ★ 读取优化：身份档案按微信 openid 缓存 60 秒。
+       首页与「我的」页共用，同一账号反复切换不再重复读 users 表；
+       openid 变化（换账号）自动失效，串号修复不受影响。 */
+    const cachedUser = readCache.getIdentity(result.openid)
+    if (cachedUser) {
+      wx.setStorageSync('userInfo', cachedUser)
+      wx.hideLoading()
+      this.setData({
+        nickName: cachedUser.nickName,
+        avatarUrl: cachedUser.avatarUrl,
+        name: cachedUser.name,
+        userInfo: cachedUser
+      })
+      this.applyIdentity(result.openid, cachedUser)
+      return
+    }
     wx.cloud.callFunction({ 
       name: 'getUsers', 
       data: { 
@@ -192,6 +234,7 @@ Page({
           name: re.result[0].name, 
           userInfo: re.result[0] 
         }) 
+        readCache.setIdentity(result.openid, re.result[0], 60)
         this.applyIdentity(result.openid, re.result[0])
       } else { 
         const data = { 
@@ -221,7 +264,9 @@ Page({
             name: data && data.length? data[0].name : '', 
             userInfo: data && data.length? data[0] : {} 
           }) 
-          this.applyIdentity(result.openid, (data && data.length) ? data[0] : {})
+          const newUser = (data && data.length) ? data[0] : {}
+          readCache.setIdentity(result.openid, newUser, 60)
+          this.applyIdentity(result.openid, newUser)
         }).catch((e) => { 
           wx.hideLoading() 
         }) 
@@ -251,27 +296,22 @@ Page({
        学生查不到会返回空/报错，前端一律静默清空。 */
     this._isTeacherMe = true
     this.setData({ isTeacherMe: true })
+    // 一次查课同时产出今日版面与 6 小时提醒（原来这里要发两次）
     this.fetchTodayCourses(oid, gen)
-    this.getMyCourse(oid, gen)
   },
  
-  getTeachersShops() { 
-    wx.cloud.callFunction({ 
-      name: 'getTeacheres', 
-      data: { 
-        page: 0, 
-        pageSize: 10 
-      } 
-    }).then((resp) => { 
-      console.log('教师', resp) 
-      this.setData({ 
-        teachers: resp.result 
-      }) 
-    }).catch((e) => { 
-    }) 
- 
-  }, 
- 
+  getTeachersShops() {
+    /* ★ 读取优化：老师名单是低频变动的字典数据，10 分钟内跨页面复用；
+       同时在途请求合并，首页反复 onShow 不会重复读 teachers 集合。 */
+    readCache.cachedRead('getTeacheres', { page: 0, pageSize: 10 }, 600)
+      .then((resp) => {
+        this.setData({ teachers: resp.result || [] })
+      })
+      .catch((e) => {
+        console.log('获取老师名单失败', e)
+      })
+  },
+
   // 去掉dropdownChange相关代码 
  
   // 拨打电话 
@@ -290,42 +330,6 @@ Page({
       url: "/pages/users/users" 
     }) 
   }, 
- 
-  // 上课前 6 小时提醒（同样只对老师本人，且用当前微信真 openid）
-  getMyCourse(openid, gen) {
-    const g = (gen === undefined) ? this._identityGen : gen
-    if (!this._isTeacherMe || !openid) return
-    wx.cloud.callFunction({
-      name: 'getMyCourse',
-      data: {
-        startTime: new Date().getTime() + 6 * 60 * 60 * 1000,
-        endTime: new Date().getTime() + 8 * 60 * 60 * 1000,
-        teacherOpenid: openid,
-        order: {
-          string:'startTime',
-          order: 'asc'
-        }
-      }
-    }).then(resp => {
-      if (g !== this._identityGen || !this._isTeacherMe) return
-      const r = resp && resp.result
-      const raw = (r && r.result && r.result.data) || (r && r.data) || []
-      const courseData = (Array.isArray(raw) ? raw : []).slice(0, 3)
-      courseData.forEach(res => {
-        res.startTime = moment(new Date(res.startTime)).format("MM-DD HH:mm:ss")
-        res.studentName = res.name || '未知学生'
-      })
-      if (courseData.length) {
-        this.setData({ dialogShow: true, dialogMessage: courseData })
-      } else {
-        this.setData({ dialogShow: false, dialogMessage: [] })
-      }
-    }).catch(err => {
-      console.log('获取上课提醒失败', err)
-      if (g !== this._identityGen) return
-      this.setData({ dialogShow: false, dialogMessage: [] })
-    })
-  },
  
   getchooseAvatar(e) { 
     console.log('修改头像', e, e.detail.avatarUrl); 

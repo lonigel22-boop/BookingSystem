@@ -1,3 +1,4 @@
+const readCache = require('../../../utils/readCache.js')
 Page({
 
   /**
@@ -75,9 +76,9 @@ Page({
     wx.showLoading({
       title: '加载中'
     })
-    wx.cloud.callFunction({
-      name: 'getShop'
-    }).then((resp) => {
+    /* ★ 门店字典缓存（300 秒）；写操作成功后会 invalidate，列表仍实时 */
+    readCache.cachedRead('getShop', {}, 300)
+      .then((resp) => {
       console.log('门店', resp)
       this.setData({
         shopList: resp.result.data
@@ -120,6 +121,7 @@ Page({
       this.setData({
         editOverlay: false,
       })
+      readCache.invalidate('getShop')
       this.getShops()
       wx.hideLoading()
     }).catch((e) => {
@@ -140,6 +142,7 @@ Page({
             data:  {_id: item._id}
           }).then((resp) => {
             console.log('门店', resp)
+            readCache.invalidate('getShop')
             _this.getShops()
             wx.hideLoading()
           }).catch((e) => {
@@ -168,6 +171,7 @@ Page({
       data: {text: addShopText}
     }).then((resp) => {
       console.log('结果', resp)
+      readCache.invalidate('getShop')
       this.getShops()
       wx.hideLoading()
     }).catch((e) => {

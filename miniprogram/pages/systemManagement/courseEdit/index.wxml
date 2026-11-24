@@ -40,7 +40,7 @@
     </van-field>
 
     <van-field
-      value="{{ duration / 60 / 1000 + 1}}"
+      value="{{ duration / 60 / 1000 }}"
       center
       label="课堂时长（分钟）"
       placeholder="请输入时长"
@@ -50,6 +50,15 @@
 
     ></van-field>
 
+    <!-- ★ 结束时间随「上课时间 / 课堂时长」实时更新，方便保存前确认 -->
+    <van-field
+      value="{{ endTimeText }}"
+      center
+      label="结束时间"
+      placeholder="选择时间与时长后自动计算"
+      border="{{ false }}"
+      readonly
+    ></van-field>
 
   </view>
 
@@ -125,26 +134,6 @@
       closeable
     >
 
-    <!-- 时长选择器 -->
-    <van-popup
-      show="{{ showDurationPicker }}"
-      round
-      position="bottom"
-      custom-style="height: 40%;"
-      bind:close="closeDurationPicker"
-      closeable
-    >
-      <view style="padding: 20rpx;">
-        <text>当前时长: {{ duration/60/1000 }} 分钟</text>
-      </view>
-      <van-picker
-        columns="{{ [30, 45, 60, 90, 120] }}"
-        title="选择课堂时长（分钟）"
-        show-toolbar
-        bind:confirm="confirmDuration"
-        bind:cancel="closeDurationPicker"
-      />
-    </van-popup>
       <view class="appointmentCourseHandle-container-popup">
         <view class="appointmentCourseHandle-container-popup-list">
           <van-radio-group value="{{ checkRoom }}" bind:change="checkRoomChange">

@@ -1,24 +1,89 @@
-<view class="courseSchedulingStatistics">
-    <van-dropdown-menu>
-      <van-dropdown-item value="{{ shopValue }}" options="{{ shopList }}" bind:change="dropdownChange" bind:open="dropdownOpen" bind:close="dropdownClose" />
-      <van-field
-        model:value="{{ date }}"
-        center
-        readonly
-        label=""
-        placeholder="请选择日期"
-        border="{{ false }}"
-        use-button-slot
-      >
-        <van-button slot="button" size="small" class="primary" color="#3f6f70" bind:tap="pickerDisplay">
-          选择日期
-        </van-button>
-      </van-field>
+<view class="page">
+
+  <!-- 顶部标题区 -->
+  <view class="hero">
+    <view class="hero-deco hero-deco-a"></view>
+    <view class="hero-deco hero-deco-b"></view>
+    <view class="hero-inner">
+      <view class="hero-left">
+        <view class="hero-title">房间使用统计</view>
+        <view class="hero-sub">{{shopName}} · {{dateLabel}}</view>
+      </view>
+      <view class="hero-badge">{{weekLabel}}</view>
+    </view>
+  </view>
+
+  <!-- 筛选卡片 -->
+  <view class="card filter-card">
+    <view class="field-label">选择校区</view>
+    <van-dropdown-menu class="shop-menu" active-color="#3f6f70">
+      <van-dropdown-item
+        value="{{ shopValue }}"
+        options="{{ shopList }}"
+        bind:change="dropdownChange"
+        bind:open="dropdownOpen"
+        bind:close="dropdownClose" />
     </van-dropdown-menu>
 
-    <date-time-picker show="{{ showPicker }}" bind:currentTime="currentTime" bind:closePopup="closePopup" />
-    
+    <view class="filter-line"></view>
 
-    <ec-canvas class="courseSchedulingStatistics-ec-canvas" wx:if="{{ canvasShow }}" id="mychart-statistics" canvas-id="mychart-bar"></ec-canvas>
-  
+    <view class="field-label">查看日期</view>
+    <view class="date-row">
+      <view class="date-box" bind:tap="pickerDisplay">
+        <text class="date-ico">📅</text>
+        <text class="date-val">{{date}}</text>
+        <text class="date-arrow">›</text>
+      </view>
+      <view class="mini-btn {{isToday ? 'mini-btn-on' : ''}}" bind:tap="goToday">今天</view>
+      <view class="mini-btn" bind:tap="refresh">↻ 刷新</view>
+    </view>
+  </view>
+
+  <!-- 概览三格 -->
+  <view class="stat-row">
+    <view class="stat-cell">
+      <view class="stat-num">{{statTotal}}</view>
+      <view class="stat-lab">当日排课</view>
+    </view>
+    <view class="stat-cell">
+      <view class="stat-num">{{statRooms}}</view>
+      <view class="stat-lab">已用房间</view>
+    </view>
+    <view class="stat-cell">
+      <view class="stat-num stat-num-sm">{{statRange}}</view>
+      <view class="stat-lab">时段跨度</view>
+    </view>
+  </view>
+
+  <!-- 图表卡片 -->
+  <view class="card chart-card">
+    <view class="chart-head">
+      <view class="chart-head-l">
+        <view class="chart-title">房间时段分布</view>
+        <view class="chart-tip">纵轴为时间 · 轻触圆点看课程详情</view>
+      </view>
+      <view class="chart-dot"></view>
+    </view>
+
+    <view wx:if="{{canvasLoading}}" class="state-box">
+      <view class="state-ico">⏳</view>
+      <view class="state-t">正在读取排课…</view>
+    </view>
+
+    <view wx:elif="{{statEmpty}}" class="state-box">
+      <view class="state-ico">🗓</view>
+      <view class="state-t">当天暂无排课</view>
+      <view class="state-d">换个日期或校区看看吧</view>
+    </view>
+
+    <ec-canvas
+      wx:elif="{{canvasShow}}"
+      class="chart-canvas"
+      id="mychart-statistics"
+      canvas-id="mychart-bar"></ec-canvas>
+  </view>
+
+  <view class="foot-hint">数据按所选校区与日期实时统计 · 下拉页面可强制刷新</view>
+
+  <date-time-picker show="{{ showPicker }}" bind:currentTime="currentTime" bind:closePopup="closePopup" />
 </view>

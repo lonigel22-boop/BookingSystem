@@ -312,10 +312,16 @@ Page({
           if (filterMyCourse && filterMyCourse.length) {
             filterMyCourse.forEach(elp => {
               // 显示开始和结束时间(已经是北京时间)
-              elp.startTimeFormat = moment(new Date(elp.startTime)).format('YYYY/MM/DD HH:mm')
-              elp.endTimeFormat = elp.duration ? 
-                moment(new Date(elp.startTime + elp.duration * 60 * 1000)).format('YYYY/MM/DD HH:mm') : 
-                moment(new Date(elp.startTime + 30 * 60 * 1000)).format('YYYY/MM/DD HH:mm') // 默认30分钟
+              /* ★ 修复：库里 duration / endTime 一律是「毫秒」（addMyCourse 存的就是
+                 minute * 60 * 1000）。旧版这里又乘 60*1000，把结束时间算到几十年后，
+                 列表显示的时段与真实排课对不上，也让人误以为没冲突。
+                 现在优先用云函数重算过的 endTime，缺失才用 duration 兜底。 */
+              const startTs = Number(elp.startTime)
+              const endTs = Number(elp.endTime) > startTs
+                ? Number(elp.endTime)
+                : startTs + (Number(elp.duration) > 0 ? Number(elp.duration) : 30 * 60 * 1000)
+              elp.startTimeFormat = moment(new Date(startTs)).format('YYYY/MM/DD HH:mm')
+              elp.endTimeFormat = moment(new Date(endTs)).format('YYYY/MM/DD HH:mm')
             })
             el.currentCourse = filterMyCourse
           } else {

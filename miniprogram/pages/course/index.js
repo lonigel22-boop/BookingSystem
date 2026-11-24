@@ -1,5 +1,6 @@
 //获取应用实例
 const app = getApp()
+const readCache = require('../../utils/readCache.js')
 Page({
 
   /**
@@ -99,6 +100,15 @@ Page({
   },
   getAndAddUser(result, el) {
     const _this = this
+    /* ★ 读取优化：首页 / 我的 / 课程 三个登录入口共用按 openid 隔离的
+       身份档案缓存（60 秒），同一账号反复切页不再重复读 users 表。
+       换账号时 openid 变化，缓存自动失效，建档流程不受影响。 */
+    const cached = readCache.getIdentity(result.openid)
+    if (cached) {
+      this.applyUser(cached)
+      wx.hideLoading()
+      return
+    }
     wx.cloud.callFunction({
       name: 'getUsers',
       data: {
@@ -109,33 +119,8 @@ Page({
     }).then((re) => {
       console.log('查询用户结果', re)
       if (re.result && re.result.length) {
-
-        wx.setStorageSync('userInfo', re.result[0])
-
-        let myCourse = []
-        const tmpResult = re.result
-        if (tmpResult && tmpResult) {
-          tmpResult[0].tearchreOpenid_course.forEach(res => {
-            res.course.forEach(el => {
-              el.teacherOpenid = res.teacherOpenid
-              el.teacherName = res.teacherName
-            })
-            myCourse = myCourse.concat(res.course)
-          })
-        }
-
-        const tempMyCourses = []
-        this.data.courses.forEach(el => {
-          const filterCourse = myCourse.filter(res => {
-            return res._id === el._id
-          })
-          if (filterCourse && filterCourse.length) {
-            tempMyCourses.push(filterCourse[0])
-          }
-        })
-        this.setData({
-          myCourses : tempMyCourses
-        })
+        readCache.setIdentity(result.openid, re.result[0], 60)
+        this.applyUser(re.result[0])
         wx.hideLoading()
       } else {
         const data = {
@@ -157,7 +142,9 @@ Page({
         }).then((re) => {
           console.log('添加用户结果', re)
           const data = re.result.data
-          wx.setStorageSync('userInfo', data && data.length ? data[0] : {})
+          const newUser = data && data.length ? data[0] : {}
+          readCache.setIdentity(result.openid, newUser, 60)
+          this.applyUser(newUser)
           wx.hideLoading()
         }).catch((e) => {
           wx.hideLoading()
@@ -166,6 +153,35 @@ Page({
     }).catch((e) => {
       wx.hideLoading()
     })
+  },
+
+  /* ★ 顺手修掉原有竞态：onShow 里 getCourse() 与登录链路并行发出，
+     原来登录先回来时 courses 还是空 →「我的课程」算不出来。
+     现在两边都触发 applyUser，谁后到谁补算，结果最终一致。
+     同时兼容老存档缺 tearchreOpenid_course 字段的情况。 */
+  applyUser(user) {
+    wx.setStorageSync('userInfo', user)
+    this._user = user
+    const courses = this.data.courses || []
+    if (!courses.length) return
+    let myCourse = []
+    const rel = (user && user.tearchreOpenid_course) || []
+    rel.forEach(res => {
+      const list = res.course || []
+      list.forEach(el => {
+        el.teacherOpenid = res.teacherOpenid
+        el.teacherName = res.teacherName
+      })
+      myCourse = myCourse.concat(list)
+    })
+    const tempMyCourses = []
+    courses.forEach(el => {
+      const filterCourse = myCourse.filter(res => res._id === el._id)
+      if (filterCourse && filterCourse.length) {
+        tempMyCourses.push(filterCourse[0])
+      }
+    })
+    this.setData({ myCourses: tempMyCourses })
   },
 
   /**
@@ -218,19 +234,18 @@ Page({
   },
   // 全部课程查询
   getCourse() {
-    // wx.showLoading({
-    //   title: '加载中'
-    // })
-    wx.cloud.callFunction({
-      name: 'getCourse'
-    }).then((resp) => {
+    /* ★ 课程字典缓存（300 秒）：与 addStudents / myStudentAdd /
+       courseManagment 跨页复用同一份数据；写操作成功后会 invalidate。 */
+    readCache.cachedRead('getCourse', {}, 300)
+      .then((resp) => {
       console.log('全部课程', resp)
       this.setData({
         courses: resp.result.data
       })
-      // wx.hideLoading()
+      // 登录链路可能已先完成，这里补算一次「我的课程」
+      if (this._user) this.applyUser(this._user)
     }).catch((e) => {
-      // wx.hideLoading()
+      console.log('获取课程失败', e)
     })
   },
   appointmentCourse() {

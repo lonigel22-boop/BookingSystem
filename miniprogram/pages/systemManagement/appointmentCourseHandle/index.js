@@ -1,4 +1,5 @@
   import moment from 'moment'
+
   Page({
 
     /**
@@ -18,7 +19,8 @@
         if (type === 'minute')  return `${value}分`
         return value
       },
-      startTime: '',
+      startTime: '',       // 展示用字符串
+      startTimeTs: 0,      // ★ 真正提交用的时间戳
       teacher: '',
       currentTeacher: {},
       shop: '',
@@ -58,6 +60,8 @@
             new Date().getTime(),
           startTime: currentCourse && currentCourse.length ? 
             moment(new Date(currentCourse[currentCourse.length - 1].startTime)).add(7, 'days').format('YYYY/MM/DD HH:mm') : '',
+          startTimeTs: currentCourse && currentCourse.length ?
+            moment(new Date(currentCourse[currentCourse.length - 1].startTime)).add(7, 'days').valueOf() : 0,
           // 使用从myClass页面传递的上次上课信息
           checkShop: data.lastShop || '',
           shop: data.lastShopName || '',
@@ -137,10 +141,10 @@
     },
     // 保存
     saveAppointment() {
-      if (!this.data.startTime || !this.data.shop || !this.data.room ) {
+      if (!this.data.startTimeTs || !this.data.shop || !this.data.room ) {
         wx.showModal({
           title: '提示',
-          content: !this.data.startTime ? 
+          content: !this.data.startTimeTs ? 
                     '请选择时间' : !this.data.shop ? 
                           '请选择门店' : !this.data.room ? "请选择房间" :
                           '' ,
@@ -157,11 +161,20 @@
         })
         const userInfo = wx.getStorageSync('userInfo')
         const currentStudent = this.data.currentStudent
+        /* ★ 用显式时间戳，不再 new Date('YYYY/MM/DD HH:mm') 反解析（iOS 可能得到 NaN）。 */
+        const startTs = Number(this.data.startTimeTs)
+        if (!Number.isFinite(startTs) || startTs <= 0) {
+          wx.hideLoading()
+          wx.showModal({ title: '提示', content: '上课时间无效，请重新选择', showCancel: false })
+          return
+        }
         wx.cloud.callFunction({
           name: 'addMyCourse',
           data: {
-            startTime: new Date(this.data.startTime).getTime(),
-            endTime: new Date(this.data.startTime).getTime() + (30 * 60 * 1000), // 默认30分钟课程
+            startTime: startTs,
+            /* ★ endTime / duration 不再由前端传：旧版这里写「30 分钟」和「29 分钟」
+               两个互相矛盾的值，而 addMyCourse 本来就按 course.minute 重算。
+               交给服务端统一计算，保证库里 endTime 与 duration 永远自洽。 */
             teacherName: userInfo.name ? userInfo.name : userInfo.nickName,
             teacherOpenid:  userInfo._openid,
             shopName: this.data.currentShop.text,
@@ -171,8 +184,7 @@
             _openid: currentStudent._openid,
             name: currentStudent.name ? currentStudent.name : currentStudent.nickName,
             room: this.data.room,
-            duration: 29*60*1000, // 默认30分钟
-            finished: new Date(this.data.startTime).getTime() < new Date().getTime()
+            finished: startTs < Date.now()
           }
         }).then((resp) => {
           console.log('结果', resp)
@@ -247,11 +259,11 @@
         return
       }
 
+      /* ★ 修复：旧版同一个 setData 里写了两个 startTime，
+         时间戳被格式化字符串覆盖，保存时只能靠反解析字符串。 */
       this.setData({
-        // 存储UTC时间戳用于后端传输
-        startTime: selectedTime.getTime(),
-        // 直接显示选择的时间(已经是北京时间)
         startTime: moment(selectedTime).format('YYYY/MM/DD HH:mm'),
+        startTimeTs: selectedTime.getTime(),
         showDateTime: false
       })
     },
@@ -294,33 +306,33 @@
         showShop: false
       })
     },
+    /* 保底版：直连查询，不依赖任何缓存模块；每次回调都重新执行
+       applyShopSelection，保证后到的 checkShop（上次上课门店）仍被正确选中。 */
     getShops() {
       wx.showLoading({
         title: '加载中'
       })
       wx.cloud.callFunction({
         name: 'getShop',
-        data: {
-          name: this.data.searchShopName
-        }
+        data: { name: this.data.searchShopName }
       }).then((resp) => {
-        console.log('门店', resp)
+          const list = (resp && resp.result && resp.result.data) || []
+          this.setData({ shopList: list })
+          this.applyShopSelection(list)
+          wx.hideLoading()
+        }).catch((e) => {
+          console.log('获取门店失败', e)
+          wx.hideLoading()
+        })
+    },
+    applyShopSelection(list) {
+      const hit = (list || []).filter(res => res._id === this.data.checkShop)
+      if (hit && hit.length) {
         this.setData({
-          shopList: resp.result.data
+          roomList: hit[0].room ? hit[0].room.split(',') : [],
+          currentShop: hit[0]
         })
-        const getShop = this.data.shopList.filter(res => {
-          return res._id === this.data.checkShop
-        })
-        if (getShop && getShop.length) {
-          this.setData({
-            roomList: getShop[0].room ? getShop[0].room.split(',') : [],
-            currentShop: getShop[0]
-          })
-        }
-        wx.hideLoading()
-      }).catch((e) => {
-        wx.hideLoading()
-      })
+      }
     },
     searchShop() {
       this.setData({

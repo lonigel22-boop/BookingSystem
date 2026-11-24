@@ -40,7 +40,10 @@ exports.main = async (event, context) => {
       avatarUrl: true,
       isTop: true,
       tearchreOpenid_course: true,
-      _openid: true
+      _openid: true,
+      // ★ 只读优化附带修复：原来 field 漏了 isTeacher，
+      //   导致前端拿不到身份、学生也会多发一次查课请求。仅多返回一个字段，不改数据。
+      isTeacher: true
     })
     .skip(page * pageSize)
     .limit(pageSize)

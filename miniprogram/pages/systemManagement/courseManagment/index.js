@@ -1,4 +1,5 @@
 // pages/systemManagement/courseManagment/index.js
+const readCache = require('../../../utils/readCache.js')
 Page({
 
   /**
@@ -68,15 +69,16 @@ Page({
     wx.showLoading({
       title: '加载中'
     })
-    wx.cloud.callFunction({
-      name: 'getCourse'
-    }).then((resp) => {
+    /* ★ 课程字典缓存（300 秒）；新增/编辑/删除/重置成功后会 invalidate */
+    readCache.cachedRead('getCourse', {}, 300)
+      .then((resp) => {
       console.log('课程', resp)
       this.setData({
         courses: resp.result.data
       })
       wx.hideLoading()
-      this.getUsers()
+      /* 原代码这里调用 this.getUsers()，但本页从未定义该方法，
+         每次进页面 / 删除 / 重置后都会抛 TypeError 被 catch 吞掉，属死调用，已移除。 */
     }).catch((e) => {
       wx.hideLoading()
     })
@@ -121,6 +123,7 @@ Page({
             }
           }).then((res) => {
             console.log('成功', res)
+            readCache.invalidate('getCourse')
             _this.getCourse()
          }).catch((e) => {
           console.log('失败', e)
@@ -151,6 +154,7 @@ Page({
                 icon: 'success',
                 duration: 2000
               })
+              readCache.invalidate('getCourse')
               _this.getCourse()
             } else {
               wx.showToast({

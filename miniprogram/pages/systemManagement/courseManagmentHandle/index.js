@@ -1,4 +1,5 @@
 // pages/systemManagement/courseManagmentHandle/index.js
+const readCache = require('../../../utils/readCache.js')
 Page({
 
   /**
@@ -108,6 +109,7 @@ Page({
         }
       }).then((resp) => {
         console.log('结果', resp)
+        readCache.invalidate('getCourse')
         wx.hideLoading()
         wx.showToast({
           title: '保存成功',
@@ -140,6 +142,7 @@ Page({
         }
       }).then((resp) => {
         console.log('结果', resp)
+        readCache.invalidate('getCourse')
         wx.hideLoading()
         wx.showToast({
           title: '保存成功',

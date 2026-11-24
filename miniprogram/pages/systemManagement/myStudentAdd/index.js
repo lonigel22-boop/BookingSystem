@@ -1,3 +1,4 @@
+const readCache = require('../../../utils/readCache.js')
 Page({
 
   /**
@@ -173,9 +174,9 @@ Page({
     wx.showLoading({
       title: '加载中'
     })
-    wx.cloud.callFunction({
-      name: 'getCourse'
-    }).then((resp) => {
+    /* ★ 课程字典缓存：与「课程」页 / 课程管理页跨页复用同一份数据 */
+    readCache.cachedRead('getCourse', {}, 300)
+      .then((resp) => {
       this.setData({
         courses: resp.result.data
       })

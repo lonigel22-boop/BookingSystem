@@ -1,23 +1,173 @@
-.courseSchedulingStatistics{
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+/* ---------- 房间统计 · 视觉重做 ---------- */
+page {
+  background: #f4f7f6;
 }
 
-.courseSchedulingStatistics-ec-canvas{
-  height: 100%;
-  padding: 40rpx;
+.page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 0 24rpx 48rpx;
+  padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+  background: #f4f7f6;
+}
+
+/* 顶部渐变标题 */
+.hero {
+  position: relative;
+  margin: 0 -24rpx 24rpx;
+  padding: 44rpx 36rpx 46rpx;
+  background: linear-gradient(135deg, #3f6f70 0%, #5a8d89 58%, #7fae9f 100%);
+  overflow: hidden;
+}
+.hero-deco {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .09);
+  pointer-events: none;
+}
+.hero-deco-a { width: 260rpx; height: 260rpx; right: -70rpx; top: -110rpx; }
+.hero-deco-b { width: 170rpx; height: 170rpx; right: 110rpx; bottom: -100rpx; background: rgba(255,255,255,.06); }
+.hero-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.hero-title { font-size: 38rpx; font-weight: 700; color: #fff; letter-spacing: 2rpx; }
+.hero-sub { margin-top: 12rpx; font-size: 23rpx; color: rgba(255,255,255,.82); line-height: 1.5; }
+.hero-badge {
+  flex: 0 0 auto;
+  padding: 12rpx 24rpx;
+  border-radius: 99rpx;
+  background: rgba(255,255,255,.18);
+  border: 1rpx solid rgba(255,255,255,.32);
+  color: #fff;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+/* 通用卡片 */
+.card {
+  background: #fff;
+  border-radius: 22rpx;
+  box-shadow: 0 8rpx 30rpx rgba(31, 61, 60, .06);
+  box-sizing: border-box;
+  margin-bottom: 24rpx;
+}
+
+/* 筛选卡 */
+.filter-card { padding: 28rpx 28rpx 30rpx; }
+.field-label {
+  font-size: 23rpx;
+  color: #8a9a99;
+  font-weight: 600;
+  letter-spacing: 1rpx;
+  margin-bottom: 12rpx;
+}
+.shop-menu {
+  background: #f6f9f8 !important;
+  border-radius: 14rpx;
+  overflow: hidden;
+  box-shadow: none !important;
+}
+.filter-line { height: 1rpx; background: #eef2f1; margin: 26rpx 0 24rpx; }
+.date-row { display: flex; align-items: center; gap: 14rpx; }
+.date-box {
+  flex: 1;
+  min-width: 0;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  background: #f6f9f8;
+  border: 1rpx solid #e3ecea;
+  border-radius: 14rpx;
+  padding: 0 20rpx;
   box-sizing: border-box;
 }
+.date-ico { font-size: 28rpx; margin-right: 12rpx; }
+.date-val { flex: 1; font-size: 27rpx; color: #28403f; font-weight: 600; }
+.date-arrow { font-size: 34rpx; color: #9aabaa; line-height: 1; }
+.mini-btn {
+  flex: 0 0 auto;
+  height: 80rpx;
+  line-height: 78rpx;
+  padding: 0 22rpx;
+  border-radius: 14rpx;
+  background: #eef4f3;
+  border: 1rpx solid #dce9e7;
+  color: #3f6f70;
+  font-size: 24rpx;
+  font-weight: 600;
+  box-sizing: border-box;
+}
+.mini-btn-on { background: #3f6f70; border-color: #3f6f70; color: #fff; }
 
-.mychart-statistics{
+/* 概览三格 */
+.stat-row {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+.stat-cell {
+  flex: 1;
+  min-width: 0;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 26rpx 10rpx 24rpx;
+  text-align: center;
+  box-shadow: 0 8rpx 30rpx rgba(31, 61, 60, .06);
+  box-sizing: border-box;
+}
+.stat-num {
+  font-size: 42rpx;
+  font-weight: 700;
+  color: #3f6f70;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.stat-num-sm { font-size: 27rpx; padding-top: 10rpx; padding-bottom: 6rpx; }
+.stat-lab { margin-top: 10rpx; font-size: 21rpx; color: #8a9a99; }
+
+/* 图表卡 */
+.chart-card { padding: 28rpx 20rpx 20rpx; }
+.chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8rpx 22rpx;
+}
+.chart-title { font-size: 29rpx; font-weight: 700; color: #243b3a; }
+.chart-tip { margin-top: 8rpx; font-size: 20rpx; color: #9aabaa; }
+.chart-dot {
+  width: 14rpx; height: 14rpx; border-radius: 50%;
+  background: #5a8d89;
+  box-shadow: 0 0 0 8rpx rgba(90, 141, 137, .12);
+  margin-right: 10rpx;
+}
+.chart-canvas {
   width: 100%;
-  height: 200rpx;
+  height: 620rpx;
+  display: block;
 }
 
-.primary {
-  background-color: #3f6f70;
-  border-color: #3f6f70;
-  color: #3f6f70;
+/* 加载 / 空状态 */
+.state-box {
+  height: 620rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #fafcfb;
+  border-radius: 16rpx;
+}
+.state-ico { font-size: 64rpx; margin-bottom: 20rpx; }
+.state-t { font-size: 27rpx; color: #4a615f; font-weight: 600; }
+.state-d { margin-top: 10rpx; font-size: 22rpx; color: #9aabaa; }
+
+.foot-hint {
+  text-align: center;
+  font-size: 20rpx;
+  color: #a6b3b2;
+  line-height: 1.6;
+  padding: 4rpx 20rpx 0;
 }

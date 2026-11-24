@@ -47,41 +47,46 @@ Page({
 
   // 获取月度课程数据
   async fetchMonthCourses(date) {
+    /* ★ 查询范围与「导出课时」对齐：月初 00:00 ~ 下月 1 日 00:00。
+       用 clone 计算，避免原来 startOf/endOf 就地改写 date。 */
+    const start = moment(date).startOf('month')
+    const end = moment(start).add(1, 'month').startOf('month')
+    const openid = wx.getStorageSync('userInfo')._openid
+    const key = start.valueOf() + '|' + openid
+
     wx.cloud.callFunction({
       name: 'getMyCourse',
       data: {
-        startTime: date.startOf('month').valueOf(),
-        endTime: date.endOf('month').valueOf(),
-        teacherOpenid: wx.getStorageSync('userInfo')._openid,
-        order: {
-          string: 'startTime',
-          order: 'asc'
-        }
+        startTime: start.valueOf(),
+        endTime: end.valueOf(),
+        teacherOpenid: openid,
+        order: { string: 'startTime', order: 'asc' }
       }
     }).then(resp => {
       console.log('课程结果', resp.result.result)
-      if (resp.result.result && resp.result.result.data) {
-        const days = [...this.data.days];
-        resp.result.result.data.forEach(course => {
-          const courseDate = moment(new Date(course.startTime));
-          const dayIndex = days.findIndex(day => {
-            const dayDate = moment(day.date);
-            return dayDate.isSame(courseDate, 'date');
-          });
+      const raw = (resp.result && resp.result.result && resp.result.result.data) || []
+      /* ★ 读取优化：下面的循环会把 startTime 改写成 HH:mm:ss 再塞进日历，
+         所以先深拷贝一份原始数据。用户点「导出」时直接复用，
+         不再发第二次完全相同的全月 getMyCourse 请求。 */
+      this._rawMonthKey = key
+      this._rawMonth = JSON.parse(JSON.stringify(raw))
+
+      if (raw.length) {
+        const days = [...this.data.days]
+        raw.forEach(course => {
+          const courseDate = moment(new Date(course.startTime))
+          const dayIndex = days.findIndex(day => moment(day.date).isSame(courseDate, 'date'))
           if (dayIndex !== -1) {
-            course.startTime = moment(new Date(course.startTime)).format('HH:mm:ss');
-            days[dayIndex].courses.push(course);
+            course.startTime = moment(new Date(course.startTime)).format('HH:mm:ss')
+            days[dayIndex].courses.push(course)
           }
-        });
-        this.setData({ days });
+        })
+        this.setData({ days })
       }
     }).catch(err => {
       console.log('err', err)
-      wx.showToast({
-        title: '获取课程数据失败',
-        icon: 'none'
-      });
-    });
+      wx.showToast({ title: '获取课程数据失败', icon: 'none' })
+    })
   },
 
   // 显示日期选择器
@@ -163,22 +168,35 @@ Page({
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 1);
     
-    wx.cloud.callFunction({
-      name: 'getMyCourse',
-      data: {
-        teacherOpenid: wx.getStorageSync('userInfo')._openid,
-        startTime: startDate.getTime(),
-        endTime: endDate.getTime(),
-        order: {
-          string: 'startTime',
-          order: 'asc'
-        }
-      }
-    }).then(res => {
-      if (!res.result || !res.result.result || !res.result.result.data) {
-        throw new Error('课程数据格式错误')
-      }
-      const resultData = res.result.result.data
+    /* ★ 导出复用「本月已查过」的原始课程；条件不一致才回退查库。
+       原来「看日历」和「导出」各查一次全月，重复读一整轮。 */
+    const openid = wx.getStorageSync('userInfo')._openid
+    const cacheKey = startDate.getTime() + '|' + openid
+    const monthRaw = (this._rawMonthKey === cacheKey && this._rawMonth)
+      ? JSON.parse(JSON.stringify(this._rawMonth))
+      : null
+
+    const loadTask = monthRaw
+      ? Promise.resolve(monthRaw)
+      : wx.cloud.callFunction({
+          name: 'getMyCourse',
+          data: {
+            teacherOpenid: openid,
+            startTime: startDate.getTime(),
+            endTime: endDate.getTime(),
+            order: {
+              string: 'startTime',
+              order: 'asc'
+            }
+          }
+        }).then(res => {
+          if (!res.result || !res.result.result || !res.result.result.data) {
+            throw new Error('课程数据格式错误')
+          }
+          return res.result.result.data
+        })
+
+    loadTask.then(resultData => {
       resultData.forEach((el, index) => {
         el.classHour = index + 1
         el.startTime = moment(el.startTime).format('YYYY-MM-DD HH:mm:ss')
