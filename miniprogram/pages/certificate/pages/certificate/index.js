@@ -1,5 +1,8 @@
 const db = wx.cloud.database()
 
+// 隐藏口令：在证书验证框输入 ksstbelt 进入 beltsystem 隐藏页（首页不再放入口）
+const BELT_CODE = 'ksstbelt'
+
 Page({
   data: {
     searchText: '',
@@ -12,6 +15,38 @@ Page({
     this.getUserInfo()
   },
 
+  // 从腰带系统返回后清掉口令残留，不把口令留在输入框里给旁人看到
+  onShow() {
+    if (this._isBeltCode(this.data.searchText)) {
+      this.setData({
+        searchText: '',
+        certificate: null,
+        showNoResult: false
+      })
+    }
+  },
+
+  _isBeltCode(v) {
+    return String(v || '').trim().toLowerCase() === BELT_CODE
+  },
+
+  // 证书系统入口本身仅老师可见；这里再兜一层，与原「腰带系统仅老师」口径一致
+  _canEnterBelt() {
+    const u = this.data.userInfo
+    return !!(u && u.isTeacher)
+  },
+
+  _enterBelt() {
+    if (this._beltNavigating) return
+    this._beltNavigating = true
+    wx.navigateTo({
+      url: '/pages/beltsystem/index',
+      complete: () => {
+        this._beltNavigating = false
+      }
+    })
+  },
+
   getUserInfo() {
     const userInfo = wx.getStorageSync('userInfo')
     if (userInfo) {
@@ -22,9 +57,14 @@ Page({
   },
 
   onSearchInput(e) {
+    const v = e.detail.value || ''
     this.setData({
-      searchText: e.detail.value
+      searchText: v
     })
+    // 输完口令直接进，不必再点「查询」
+    if (this._isBeltCode(v) && this._canEnterBelt()) {
+      this._enterBelt()
+    }
   },
 
   searchCertificate() {
@@ -44,6 +84,29 @@ Page({
           url: '/pages/certificate/pages/certificateLogin/index'
         })
       } else {
+        this.setData({
+          certificate: null,
+          showNoResult: true
+        })
+        wx.showToast({
+          title: '未找到相关证书',
+          icon: 'none'
+        })
+      }
+      return
+    }
+
+    // 腰带系统隐藏口令：命中则不发起证书查询，直接跳转
+    if (this._isBeltCode(searchText)) {
+      if (this._canEnterBelt()) {
+        this.setData({
+          searchText: '',
+          certificate: null,
+          showNoResult: false
+        })
+        this._enterBelt()
+      } else {
+        // 非老师：伪装成普通查无结果，不暴露隐藏功能
         this.setData({
           certificate: null,
           showNoResult: true

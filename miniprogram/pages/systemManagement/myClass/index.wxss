@@ -1,63 +1,342 @@
-.myClassSchedule-container{
-  height: 100%;
-  display: position;
+/* ===== v10 · 预约课程：ClassHourCatch 版式 =====
+   浅灰底 / 白卡片 12rpx / 左竖条标题 / 两列网格学生卡（无头像，只写名字）
+   三层弹窗共用遮罩，避免越叠越黑；所有版式沿用 20rpx 网格 */
+page { background: #f5f5f5; color: #333333; }
 
+.page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 20rpx;
   box-sizing: border-box;
 }
 
-.myClassSchedule-container-search{
-}
-
-.myClassSchedule-containe-hint{
-  padding: 10rpx;
-  text-align: center;
-
-}
-
-.myClassSchedule-container-list-btn{
-  display: flex;
-  justify-content: space-around;
+.search-card {
+  background: #ffffff;
+  border-radius: 12rpx;
   padding: 20rpx;
+  margin-bottom: 20rpx;
+  box-sizing: border-box;
 }
 
-.myClassSchedule-container-list-swipe{
-  padding: 20rpx 0;
+.list-scroll { flex: 1; height: 0; }
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #3f6f70;
+  margin-bottom: 20rpx;
+  padding-left: 20rpx;
+  border-left: 8rpx solid #3f6f70;
+  line-height: 1.4;
 }
 
-.myClassSchedule-container-list-swipe-btn+.myClassSchedule-container-list-swipe-btn{
-  margin-left: 10rpx;
+/* ★ 两列根因修复：开发者工具/部分基础库会把 flex `gap` 与
+   `calc(50% - 10rpx)` 混算成超出一行宽度 → 每行只放一个。
+   改成小程序最稳写法：外层 50% 宽 + padding 做间距（box-sizing 内不撑破）。 */
+.student-grid {
+  display: flex;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border-radius: 12rpx;
+  padding: 10rpx;
+  margin-bottom: 20rpx;
+  box-sizing: border-box;
+}
+.student-cell {
+  width: 50%;
+  padding: 10rpx;
+  box-sizing: border-box;
 }
 
-/* 学生左滑按钮样式 */
-.student-swipe-btns {
-  height: 100%;
+/* 学生卡：只写名字（无头像） */
+.student-item {
+  width: 100%;
+  min-height: 108rpx;
+  background: #f8f8f8;
+  border: 1rpx solid #e6eceb;
+  border-radius: 8rpx;
+  padding: 24rpx 20rpx;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
-  padding-right: 10rpx;
+  justify-content: center;
+  position: relative;
 }
-
-.student-swipe-btn {
-  height: 60%;
-  margin-right: 10rpx;
+.student-item.is-top {
+  background: #eef4f4;
+  border-color: #3f6f70;
 }
-
-/* 置顶学生名字样式 */
-.top-student-name .van-collapse-item__title {
+.s-name {
+  font-size: 30rpx;
+  font-weight: 500;
+  color: #333333;
+  text-align: center;
+  line-height: 1.5;
+  word-break: break-all;
+}
+.s-pin {
+  position: absolute;
+  top: 8rpx;
+  right: 8rpx;
+  font-size: 20rpx;
   color: #3f6f70;
+  background: rgba(63, 111, 112, 0.1);
+  padding: 2rpx 10rpx;
+  border-radius: 20rpx;
+}
+/* 排序切换（常驻） */
+.sort-bar { margin-bottom: 12rpx; }
+.seg {
+  display: flex;
+  background: #ffffff;
+  border: 1rpx solid #e6eceb;
+  border-radius: 8rpx;
+  padding: 6rpx;
+  box-sizing: border-box;
+}
+.seg-item {
+  flex: 1;
+  height: 56rpx;
+  line-height: 56rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #666666;
+  border-radius: 8rpx;
+  box-sizing: border-box;
+}
+.seg-item.on { background: #3f6f70; color: #ffffff; font-weight: 500; }
+.tips {
+  font-size: 22rpx;
+  color: #9aabaa;
+  line-height: 1.5;
+  padding: 4rpx 20rpx 20rpx;
+}
+
+.empty {
+  padding: 60rpx 0;
+  text-align: center;
+  color: #9aabaa;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+.list-hint {
+  padding: 20rpx 0 40rpx;
+  text-align: center;
+  color: #9aabaa;
+  font-size: 24rpx;
+}
+
+/* ===== 三层弹窗 ===== */
+.ov-mask {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 100;
+}
+.ov {
+  position: fixed;
+  left: 40rpx;
+  right: 40rpx;
+  top: 50%;
+  transform: translateY(-50%);
+  /* ★ 真机关键：给确定高度，flex 子项才能拿到确定像素高度去滚动。
+     原来只有 max-height，内容一多 flex 收缩不生效，底栏被挤出裁剪区。 */
+  height: 84vh;
+  background: #ffffff;
+  border-radius: 12rpx;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  z-index: 110;
+}
+.ov2 { z-index: 120; left: 52rpx; right: 52rpx; }
+.ov3 { z-index: 130; left: 64rpx; right: 64rpx; }
+
+
+.ov-head {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 24rpx 28rpx;
+  border-bottom: 1rpx solid #e6eceb;
+  min-height: 80rpx;
+  box-sizing: border-box;
+}
+.ov-title {
+  flex: 1;
+  font-size: 30rpx;
   font-weight: bold;
-}
-
-/* ===== 全站统一主题收尾层（ClassHourCatch 风格） ===== */
-page { background: #f5f5f5; color: #333333; }
-.section-title, .page-title {
   color: #3f6f70;
-  border-left: 8rpx solid #3f6f70;
   padding-left: 20rpx;
-  font-weight: bold;
+  border-left: 8rpx solid #3f6f70;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-button[type="primary"], .primary-btn, .export-btn, .submit-btn,
-.van-button--primary { background: #3f6f70; border-color: #3f6f70; color: #ffffff; }
-button[disabled], .export-btn[disabled] { background: #cccccc; color: #ffffff; }
-/* 深色页面上翻浅色后：提示条与主色按钮保持白字，避免白底白字 */
-.toast { background: #3f6f70; color: #ffffff; border-color: #335b5c; }
-.act.on, .dact.on, .fbtn.on, .mtab.on, .mebar-btn { color: #ffffff; }
+.ov-body {
+  flex: 1;
+  min-height: 0;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+.ov-foot {
+  flex: 0 0 auto;
+  padding: 20rpx;
+  border-top: 1rpx solid #e6eceb;
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  /* 固定底栏：白底盖住列表、层级在上、顶部淡阴影提示「这是底栏」 */
+  background: #ffffff;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 -4rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+.ov-foot.two { justify-content: space-between; }
+.ov-tip { font-size: 24rpx; color: #9aabaa; }
+
+/* L1：课程列表 */
+.ci {
+  display: flex;
+  align-items: center;
+  background: #f8f8f8;
+  border: 1rpx solid #e6eceb;
+  border-radius: 8rpx;
+  padding: 24rpx 20rpx;
+  margin-bottom: 20rpx;
+}
+.ci-main { flex: 1; }
+.ci-name { font-size: 28rpx; font-weight: 500; color: #333333; margin-bottom: 8rpx; }
+.ci-meta { font-size: 24rpx; color: #9aabaa; }
+.ci-arrow { font-size: 40rpx; color: #3f6f70; padding-left: 20rpx; }
+/* 结课：置底 + 变淡 + 角标 */
+.ci.finished { opacity: 0.45; }
+.ci-fin {
+  font-size: 22rpx;
+  color: #9aabaa;
+  border: 1rpx solid #b9c7c6;
+  border-radius: 20rpx;
+  padding: 4rpx 14rpx;
+  margin-left: 16rpx;
+  white-space: nowrap;
+}
+.ci-hint {
+  font-size: 22rpx;
+  color: #9aabaa;
+  text-align: center;
+  padding: 12rpx 0 4rpx;
+}
+
+/* L2：课节 */
+.lsn {
+  background: #f8f8f8;
+  border: 1rpx solid #e6eceb;
+  border-radius: 8rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+}
+.lsn-top { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; }
+.lsn-no { font-size: 26rpx; font-weight: bold; color: #3f6f70; }
+.lsn-time { font-size: 24rpx; color: #666666; }
+.lsn-title { font-size: 28rpx; color: #333333; margin-top: 12rpx; }
+.lsn-note { font-size: 24rpx; color: #9aabaa; margin-top: 8rpx; line-height: 1.5; }
+.lsn-btns { display: flex; gap: 16rpx; margin-top: 20rpx; }
+.mini {
+  flex: 1;
+  height: 60rpx;
+  line-height: 60rpx;
+  text-align: center;
+  background: #ffffff;
+  border: 1rpx solid #3f6f70;
+  color: #3f6f70;
+  font-size: 26rpx;
+  border-radius: 8rpx;
+}
+.mini.danger { border-color: #e05a4f; color: #e05a4f; }
+
+/* L3：表单 */
+.form-card {
+  background: #f8f8f8;
+  border: 1rpx solid #e6eceb;
+  border-radius: 8rpx;
+  margin-bottom: 20rpx;
+  overflow: hidden;
+}
+.frow {
+  display: flex;
+  align-items: center;
+  min-height: 80rpx;
+  padding: 12rpx 20rpx;
+  border-bottom: 1rpx solid #e6eceb;
+  box-sizing: border-box;
+}
+.frow:last-child { border-bottom: none; }
+.flabel { flex: 0 0 160rpx; font-size: 28rpx; color: #666666; }
+.fval { flex: 1; font-size: 28rpx; color: #333333; }
+.fval.ph { color: #9aabaa; }
+.farrow { font-size: 36rpx; color: #3f6f70; padding-left: 12rpx; }
+/* 子选择区：独立区块，不与 scroll-view 嵌套 */
+.sub-zone {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+.sub {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1rpx solid #e6eceb;
+  border-radius: 8rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+}
+.sub-head {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #3f6f70;
+  padding-left: 20rpx;
+  border-left: 8rpx solid #3f6f70;
+  margin-bottom: 20rpx;
+  display: flex;
+  justify-content: space-between;
+}
+.sub-close { font-size: 24rpx; color: #9aabaa; font-weight: normal; }
+/* 时间子面板：醒目的「用这个时间」+ 不必先点确认的提示 */
+.sub-actions { display: flex; align-items: center; gap: 16rpx; margin-left: auto; }
+.sub-ok {
+  font-size: 24rpx; color: #ffffff; background: #3f6f70;
+  padding: 8rpx 20rpx; border-radius: 8rpx; font-weight: normal;
+}
+.dt-tip {
+  font-size: 24rpx; color: #6f8887; background: #f2f7f6;
+  padding: 12rpx 16rpx; border-radius: 8rpx; margin-bottom: 12rpx; line-height: 1.5;
+}
+/* 父 .ov 已有确定高度 → sub-zone / sub 逐级 flex:1，这里拿到确定高度可滚 */
+.sub-list { flex: 1; min-height: 0; height: 0; margin-bottom: 20rpx; }
+.radio-item { padding: 16rpx 0; display: block; }
+.dt-wrap { flex: 1; min-height: 420rpx; }
+
+/* 按钮 */
+.primary, .ghost {
+  height: 72rpx;
+  line-height: 72rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  text-align: center;
+  flex: 1;
+  box-sizing: border-box;
+}
+.primary { background: #3f6f70; color: #ffffff; }
+.ghost { background: #ffffff; color: #3f6f70; border: 1rpx solid #3f6f70; }
+.primary.full { flex: 1; display: block; }
+
+/* 主题兜底（与 v7/v8 一致） */
+button[type="primary"], .van-button--primary { background: #3f6f70; border-color: #3f6f70; color: #ffffff; }

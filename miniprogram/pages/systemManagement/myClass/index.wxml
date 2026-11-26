@@ -1,6 +1,7 @@
-<view class="myClassSchedule-container">
+<view class="page">
 
-  <view class="myClassSchedule-container-search">
+  <!-- 搜索卡片（ClassHourCatch：白卡片 + 12rpx 圆角） -->
+  <view class="search-card">
     <van-field
       model:value="{{ userName }}"
       center
@@ -16,83 +17,229 @@
     </van-field>
   </view>
 
-  <scroll-view style="height: 100%" scroll-y="true" 	lower-threshold ='100' bindscrolltolower="getUsers">
-    <van-collapse value="{{ activeNames }}" bind:change="onChange"  wx:for="{{ userListResult }}" wx:key="_id" accordion >
-      <van-swipe-cell right-width="{{ 120 }}" data-item="{{item}}">
-        <van-collapse-item class="{{item.isTop ? 'top-student-name' : ''}}" title="{{ item.name ? item.name : item.nickName }}" name="{{item._id}}">
+  <scroll-view class="list-scroll" scroll-y="{{true}}" lower-threshold="100" bindscrolltolower="loadMoreUsers">
+    <view class="section-title">学生列表 · {{userListResult.length}} 人</view>
 
-        <van-collapse value="{{ activeCourses }}" bind:change="onChangeCourse"  wx:for="{{  item.course.course }}" wx:for-item="_item" wx:for-index="_index" wx:key="_id" accordion>
-          <van-collapse-item title="{{ _item.title }}" name="{{_index}}">
+    <!-- 排序切换（常驻） -->
+    <view class="sort-bar">
+      <view class="seg">
+        <view class="seg-item {{sortMode === 'pinyin' ? 'on' : ''}}" data-mode="pinyin" catchtap="setSortMode">拼音 A–Z</view>
+        <view class="seg-item {{sortMode === 'join' ? 'on' : ''}}" data-mode="join" catchtap="setSortMode">加入顺序</view>
+      </view>
+    </view>
+    <!-- 操作说明：常驻在列表上方，不用滑到底 -->
+    <view class="tips">长按学生卡片可置顶 / 取消置顶 · 在课程列表长按课程可结课</view>
 
-            <van-swipe-cell right-width="{{ 200 }}"  wx:for="{{_item.currentCourse}}" wx:for-item="__item" wx:for-index="__index" wx:key="_id">
-              <van-cell-group>
-                <van-cell title="" value="{{__item.startTimeFormat}}" label="{{__item.note ? __item.note : ''}}" border="{{ false }}" wx:if="{{__item.note}}">
-                  <view slot="title">
-                    <text decode="{{true}}">第{{__index + 1}}节&nbsp;&nbsp;&nbsp;&nbsp;{{__item.lessonTitle}}</text>
-                  </view>
-                </van-cell>
-                <van-cell title="" value="{{__item.startTimeFormat}}" border="{{ false }}" wx:else>
-                  <view slot="title">
-                    <text decode="{{true}}">第{{__index + 1}}节&nbsp;&nbsp;&nbsp;&nbsp;{{__item.lessonTitle}}</text>
-                  </view>
-                </van-cell>
-              </van-cell-group>
-              <view slot="right" class="myClassSchedule-container-list-swipe">
-                <van-button class="myClassSchedule-container-list-swipe-btn" color="#e05a4f" size="small" data-data="{{ __item }}" bind:tap="deleteMyCourse">取消</van-button>
-                <van-button class="myClassSchedule-container-list-swipe-btn" color="#3f6f70" size="small" data-data="{{ __item }}" bind:tap="{{ __item.finished ? 'editMyCourse' : 'editMyCourse' }}">修改</van-button>
-                <van-button class="myClassSchedule-container-list-swipe-btn" color="#3f6f70" size="small" data-data="{{ __item }}" bind:tap="showNoteDialog">备注</van-button>
-              </view>
-            </van-swipe-cell>
-
-            <view class="myClassSchedule-container-list-btn">
-              <van-button class="content-course-item-btn" color="#3f6f70" size="small" data-data="{{ _item }}" data-student="{{ item }}" bind:tap="toAppointment">预约</van-button>
-              <!-- <van-button class="content-course-item-btn" color="#3f6f70" size="small" data-data="{{ _item }}" data-student="{{ item }}" >结课</van-button> -->
-            </view>
-          </van-collapse-item>
-        </van-collapse>
-      </van-collapse-item>
-        <view slot="right" class="student-swipe-btns">
-          <van-button 
-            class="student-swipe-btn" 
-            color="{{item.isTop ? '#e05a4f' : '#3f6f70'}}" 
-            size="small" 
-            bind:tap="toggleTop" 
-            data-item="{{item}}"
-          >
-            {{item.isTop ? '取消置顶' : '置顶'}}
-          </van-button>
+    <!-- 两列网格：外层 50% + padding 做间距（不用 gap/calc），无头像只写名字 -->
+    <view class="student-grid">
+      <view class="student-cell" wx:for="{{userListResult}}" wx:key="_id">
+        <view
+          class="student-item {{item.isTop ? 'is-top' : ''}}"
+          data-id="{{item._id}}"
+          bind:tap="openL1"
+          bindlongpress="toggleTop"
+        >
+          <view class="s-name">{{item.name ? item.name : item.nickName}}</view>
+          <view class="s-pin" wx:if="{{item.isTop}}">已置顶</view>
         </view>
-      </van-swipe-cell>
-    </van-collapse>
-    <view class="myClassSchedule-containe-hint" hidden="{{hasMore}}">没有更多数据</view>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{!userListResult.length}}">暂无学生，试试其它关键词</view>
+    <view class="list-hint" wx:if="{{!hasMore}}">没有更多数据</view>
+
   </scroll-view>
 
-  <date-time-picker show="{{ showStartPicker }}" bind:currentTime="currentTime" bind:closePopup="closePopup" />
-  <date-time-picker show="{{ showEndPicker }}"  minDate="{{ minEndDate }}" bind:currentTime="currentEndTime" bind:closePopup="closeEndPopup" />
+  <!-- ============ 三层弹窗：共用一个遮罩，避免越叠越黑 ============ -->
+  <view class="ov-mask" wx:if="{{showL1 || showL2 || showL3}}" bind:tap="onMaskTap" catchtouchmove="noop"></view>
 
+  <!-- ① 学生的课程：只留标题，退出走点遮罩 -->
+  <view class="ov ov1" wx:if="{{showL1}}" catchtouchmove="noop">
+    <view class="ov-head">
+      <text class="ov-title">{{l1Student.name ? l1Student.name : l1Student.nickName}} · 课程</text>
+    </view>
+    <scroll-view class="ov-body" scroll-y="{{true}}">
+      <view
+        class="ci {{c.finished ? 'finished' : ''}}"
+        wx:for="{{l1Courses}}"
+        wx:for-item="c"
+        wx:key="_id"
+        data-index="{{index}}"
+        bindlongpress="toggleCourseFinished"
+        catchtap="openL2"
+      >
+        <view class="ci-main">
+          <view class="ci-name">{{c.title}}</view>
+          <view class="ci-meta">{{c.currentCourse.length}} 节课<text wx:if="{{c.finished}}"> · 已结课</text></view>
+        </view>
+        <text class="ci-fin" wx:if="{{c.finished}}">已结课</text>
+        <text class="ci-arrow" wx:else>›</text>
+      </view>
+      <view class="empty" wx:if="{{!l1Courses.length}}">该学生还没有课程</view>
+      <view class="ci-hint">长按课程可结课 / 取消结课，结课课程置底并变淡</view>
+    </scroll-view>
+    <view class="ov-foot">
+      <text class="ov-tip">点课程查看课节</text>
+    </view>
+  </view>
+
+  <!-- ② 该课程的课节：只留标题，退出走点遮罩回上一层 -->
+  <view class="ov ov2" wx:if="{{showL2}}" catchtouchmove="noop">
+    <view class="ov-head">
+      <text class="ov-title">{{l2Course.title}}</text>
+    </view>
+    <scroll-view class="ov-body" scroll-y="{{true}}">
+      <view class="lsn" wx:for="{{l2Course.currentCourse}}" wx:for-item="ls" wx:for-index="li" wx:key="_id">
+        <view class="lsn-top">
+          <text class="lsn-no">第{{li + 1}}节</text>
+          <text class="lsn-time">{{ls.startTimeFormat}} — {{ls.endTimeFormat}}</text>
+        </view>
+        <view class="lsn-title">{{ls.lessonTitle}}</view>
+        <view class="lsn-note" wx:if="{{ls.note}}">备注：{{ls.note}}</view>
+        <view class="lsn-btns">
+          <view class="mini" data-data="{{ls}}" catchtap="openL3Edit">修改</view>
+          <view class="mini" data-data="{{ls}}" catchtap="showNoteDialog">备注</view>
+          <view class="mini danger" data-data="{{ls}}" catchtap="deleteMyCourse">取消</view>
+        </view>
+      </view>
+      <view class="empty" wx:if="{{!l2Course.currentCourse.length}}">这门课还没有排课</view>
+    </scroll-view>
+    <!-- 固定底栏：在 scroll-view 之外，永远可见，不随课节列表滚动 -->
+    <view class="ov-foot">
+      <view class="primary full" catchtap="openL3Add">＋ 预约新课</view>
+    </view>
+  </view>
+
+  <!-- ③ 预约 / 修改详情：只留标题，退出走底部「取消」/ 点遮罩 -->
+  <view class="ov ov3" wx:if="{{showL3}}" catchtouchmove="noop">
+    <view class="ov-head">
+      <text class="ov-title">{{l3Title}}</text>
+    </view>
+    <!-- 表单区：子面板收起时显示 -->
+    <scroll-view class="ov-body" wx:if="{{!subPanel}}" scroll-y="{{true}}">
+      <view class="form-card">
+        <view class="frow" data-panel="time" catchtap="openSub">
+          <text class="flabel">时间</text>
+          <text class="fval {{startTime ? '' : 'ph'}}">{{startTime ? startTime : '请选择时间'}}</text>
+          <text class="farrow">›</text>
+        </view>
+
+        <view class="frow" wx:if="{{l3Mode === 'add'}}">
+          <text class="flabel">教师</text>
+          <text class="fval">{{teacher}}</text>
+        </view>
+        <view class="frow">
+          <text class="flabel">学生</text>
+          <text class="fval">{{studentName}}</text>
+        </view>
+        <view class="frow" wx:if="{{l3Mode === 'add'}}">
+          <text class="flabel">课程</text>
+          <text class="fval">{{courseTitle}}</text>
+        </view>
+
+        <view class="frow" data-panel="shop" catchtap="openSub">
+          <text class="flabel">门店</text>
+          <text class="fval {{shop ? '' : 'ph'}}">{{shop ? shop : '请选择门店'}}</text>
+          <text class="farrow">›</text>
+        </view>
+        <view class="frow" data-panel="room" catchtap="openSub">
+          <text class="flabel">房间</text>
+          <text class="fval {{room ? '' : 'ph'}}">{{room ? room : '请选择房间'}}</text>
+          <text class="farrow">›</text>
+        </view>
+
+      </view>
+    </scroll-view>
+
+    <!-- 子选择区：独立于滚动容器，时间选择器不会和外层 scroll-view 抢手势 -->
+    <view class="sub-zone" wx:if="{{subPanel}}">
+      <view class="sub" wx:if="{{subPanel === 'time'}}">
+        <view class="sub-head">
+          <text>选择时间</text>
+          <view class="sub-actions">
+            <text class="sub-close" catchtap="closeSub">收起</text>
+            <text class="sub-ok" catchtap="dateConfirmCurrent">✓ 用这个时间</text>
+          </view>
+        </view>
+        <view class="dt-tip"> 点「✓ 用这个时间」或点下方均可保存时间</view>
+        <view class="dt-wrap">
+          <van-datetime-picker
+            id="dtPicker"
+            type="datetime"
+            value="{{currentDate}}"
+            min-date="{{minDate}}"
+            max-date="{{maxDate}}"
+            show-toolbar="{{false}}"
+            filter="{{minuteFilter}}"
+            bind:confirm="dateConfirm"
+            bind:cancel="dateCancel"
+            formatter="{{formatter}}"
+          />
+        </view>
+      </view>
+
+      <view class="sub" wx:if="{{subPanel === 'shop'}}">
+        <view class="sub-head">选择门店<text class="sub-close" catchtap="closeSub">收起</text></view>
+        <van-field
+          model:value="{{searchShopName}}"
+          center
+          clearable
+          label=""
+          placeholder="搜索门店"
+          border="{{false}}"
+          use-button-slot
+        >
+          <van-button slot="button" size="small" type="primary" color="#3f6f70" catchtap="searchShop">搜索</van-button>
+        </van-field>
+        <scroll-view class="sub-list" scroll-y="{{true}}">
+          <van-radio-group value="{{checkShop}}" bind:change="checkShopChange">
+            <van-radio custom-class="radio-item" wx:for="{{shopList}}" wx:key="_id" name="{{item._id}}" checked-color="#3f6f70">{{item.text}}</van-radio>
+          </van-radio-group>
+          <view class="empty" wx:if="{{!shopList.length}}">没有门店数据</view>
+        </scroll-view>
+        <view class="primary full" catchtap="saveShop">确定</view>
+      </view>
+
+      <view class="sub" wx:if="{{subPanel === 'room'}}">
+        <view class="sub-head">选择房间<text class="sub-close" catchtap="closeSub">收起</text></view>
+        <scroll-view class="sub-list" scroll-y="{{true}}">
+          <van-radio-group value="{{checkRoom}}" bind:change="checkRoomChange">
+            <van-radio custom-class="radio-item" wx:for="{{roomList}}" wx:key="*this" name="{{item}}" checked-color="#3f6f70">{{item}}</van-radio>
+          </van-radio-group>
+          <view class="empty" wx:if="{{!roomList.length}}">该门店还没有房间</view>
+        </scroll-view>
+        <view class="primary full" catchtap="saveRoom">确定</view>
+      </view>
+    </view>
+    <view class="ov-foot two">
+      <view class="ghost" catchtap="backOne">取消</view>
+      <view class="primary" catchtap="onSave">{{l3Mode === 'add' ? '保存预约' : '保存修改'}}</view>
+    </view>
+  </view>
+
+  <!-- 备注：沿用原 van-dialog，独立于三层弹窗 -->
   <van-dialog
     use-slot
     title="课程备注"
-    show="{{ showNoteDialog }}"
+    show="{{showNoteDialog}}"
     show-cancel-button
     confirm-button-color="#3f6f70"
     bind:confirm="saveNote"
     bind:close="closeNoteDialog"
   >
     <van-field
-      model:value="{{ lessonTitle }}"
+      model:value="{{lessonTitle}}"
       placeholder="请输入课节标题"
-      border="{{ false }}"
+      border="{{false}}"
       custom-style="width: 90%; margin: 20rpx auto;"
     />
     <van-field
-      model:value="{{ noteContent }}"
+      model:value="{{noteContent}}"
       type="textarea"
       placeholder="请输入备注内容"
       autosize="{{ { minHeight: 120, maxHeight: 120 } }}"
-      border="{{ false }}"
+      border="{{false}}"
       custom-style="width: 90%; margin: 20rpx auto;"
     />
   </van-dialog>
-  
 </view>

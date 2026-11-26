@@ -49,9 +49,10 @@ Page({
         title: '加载中',
         mask: true
       })
-      wx.cloud.callFunction({
-          name: 'getWXContext'
-        }).then((resp) => {
+/* ★ 会话级共享：openid 在一次小程序运行内不变，
+      首页 / 我的 / 课程三页共用一次 getWXContext（原本每页 onShow 各调一次）。
+      readCache 按参数隔离 + 600 秒 TTL；换微信账号 = 重进小程序 = 内存缓存清空。 */
+      readCache.cachedRead('getWXContext', {}, 600).then((resp) => {
           console.log('云函数getWXContext', resp.result)
           this.getUserInfo(resp.result)
           this.setData({

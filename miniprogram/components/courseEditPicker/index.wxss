@@ -1,0 +1,6 @@
+
+/* ===== v8 · 组件版式统一 ===== */
+button { border-radius: 8rpx; min-height: 80rpx; font-size: 28rpx; padding: 0 40rpx; }
+input, textarea { border-radius: 8rpx; min-height: 80rpx; padding: 16rpx 20rpx;
+  background: #f8f8f8; box-sizing: border-box; }
+.van-popup, .popup, .modal, .picker { border-radius: 16rpx; overflow: hidden; }

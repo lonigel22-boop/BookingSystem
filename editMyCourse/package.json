@@ -1,0 +1,9 @@
+{
+  "name": "editMyCourse",
+  "version": "1.0.0",
+  "description": "editMyCourse 保险版（撤优化）",
+  "main": "index.js",
+  "dependencies": {
+    "wx-server-sdk": "~3.0.1"
+  }
+}

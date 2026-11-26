@@ -1,36 +1,21 @@
-// 云函数入口文件
+// 云函数入口文件 · 保险版（撤优化）
+// 撤掉：「先取一页、满 100 才翻页」的读取优化循环
+// 保留：原版 where 语义与返回结构 { data, errMsg }
+// 新增：外层 try/catch，永不 reject
 const cloud = require('wx-server-sdk')
-
-cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV }) // 使用当前云环境
+cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
-const MAX_LIMIT = 100
 
-// 云函数入口函数
-// ★ 读取优化：原来「先 count() 全集合，再按 100 条分页 get()」，
-//   集合通常只有几条门店 → 每次调用固定 2 次数据库读。
-//   现在先取第一页；不足 100 条说明已经取完，直接返回（1 次读）。
-//   只有满 100 条才继续翻页，且按 where 实际结果翻，不再按全集合 count 空跑。
-//   返回结构 { data, errMsg } 与原来完全一致，不动任何数据。
 exports.main = async (event, context) => {
+  event = event || {}
   console.log('参数', event)
-  const MAX_LIMIT = 100
-  const where = event.name ? { text: new RegExp(event.name, 'i') } : {}
-  const col = db.collection('shops')
-
-  const first = await col.where(where).limit(MAX_LIMIT).get()
-  let data = first.data || []
-  let errMsg = first.errMsg
-
-  if (data.length === MAX_LIMIT) {
-    let page = 1
-    while (page <= 50) {
-      const r = await col.where(where).skip(page * MAX_LIMIT).limit(MAX_LIMIT).get()
-      const d = r.data || []
-      data = data.concat(d)
-      if (d.length < MAX_LIMIT) break
-      page++
-    }
+  try {
+    const where = event.name ? { text: new RegExp(event.name, 'i') } : {}
+    const res = await db.collection('shops').where(where).limit(100).get()
+    return { data: (res && res.data) || [], errMsg: res && res.errMsg }
+  } catch (err) {
+    console.error('getShop 未捕获异常（已兜底返回空数据）', err)
+    return { data: [], errMsg: 'safe:empty-on-error' }
   }
-  return { data: data, errMsg: errMsg }
 }

@@ -1,4 +1,5 @@
   import moment from 'moment'
+const readCache = require('../../../utils/readCache.js')
 
   Page({
 
@@ -306,16 +307,16 @@
         showShop: false
       })
     },
-    /* 保底版：直连查询，不依赖任何缓存模块；每次回调都重新执行
-       applyShopSelection，保证后到的 checkShop（上次上课门店）仍被正确选中。 */
+    /* ★ 减少调用：onLoad + 两个 eventChannel 回调最多 3 次 getShops → 只发 1 次云函数。
+       在途合并 + 300 秒短缓存；每次调用仍各自执行 applyShopSelection，
+       保证后到的 checkShop（上次上课门店）仍被正确选中。
+       搜索框带不同 name → 自动不同缓存键，不会串数据。
+       写门店后由 shopManagement 的 invalidate('getShop') 统一失效。 */
     getShops() {
       wx.showLoading({
         title: '加载中'
       })
-      wx.cloud.callFunction({
-        name: 'getShop',
-        data: { name: this.data.searchShopName }
-      }).then((resp) => {
+      readCache.cachedRead('getShop', { name: this.data.searchShopName }, 300).then((resp) => {
           const list = (resp && resp.result && resp.result.data) || []
           this.setData({ shopList: list })
           this.applyShopSelection(list)

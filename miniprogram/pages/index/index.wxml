@@ -39,12 +39,6 @@
       link-type="navigateTo" 
       url="/pages/systemManagement/courseSchedulingStatistics/index"
       wx:if="{{userInfo.isTeacher}}"/> 
-    <van-cell 
-      is-link 
-      title="腰带系统" 
-      link-type="navigateTo" 
-      url="/pages/beltsystem/index"
-      wx:if="{{userInfo.isTeacher}}"/> 
       <van-cell 
       is-link 
       title="技能树" 

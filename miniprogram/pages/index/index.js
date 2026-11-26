@@ -89,7 +89,10 @@ Page({
         startTime: todayStart,
         endTime: queryEnd,
         teacherOpenid: openid,
-        order: { string: 'startTime', order: 'asc' }
+        order: { string: 'startTime', order: 'asc' },
+        /* 首页版面只读课程自身字段 → 跳过 users join，少一次集合读、响应更小。
+           不缓存：这里的时间窗含 Date.now()，缓存 key 浮动且可能让 6~8h 提醒延迟。 */
+        noLookup: true
       }
     }).then(resp => {
       // 身份已切换 / 响应乱序回来 → 一律丢弃，绝不覆盖当前版面
@@ -138,9 +141,10 @@ Page({
       title: '加载中', 
       mask: true 
     }) 
-    wx.cloud.callFunction({ 
-      name: 'getWXContext' 
-    }).then((resp) => { 
+/* ★ 会话级共享：openid 在一次小程序运行内不变，
+      首页 / 我的 / 课程三页共用一次 getWXContext（原本每页 onShow 各调一次）。
+      readCache 按参数隔离 + 600 秒 TTL；换微信账号 = 重进小程序 = 内存缓存清空。 */
+    readCache.cachedRead('getWXContext', {}, 600).then((resp) => { 
       console.log('云函数getWXContext', resp.result) 
       // ★ 当前微信真身份（云函数从上下文拿，前端伪造不了），后续查课只认这个
       this._wxOpenid = resp.result && resp.result.openid

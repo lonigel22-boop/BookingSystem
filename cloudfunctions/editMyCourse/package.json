@@ -1,13 +1,8 @@
 {
   "name": "editMyCourse",
   "version": "1.0.0",
-  "description": "",
+  "description": "editMyCourse 保险版（撤优化）",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "wx-server-sdk": "~3.0.1"
   }

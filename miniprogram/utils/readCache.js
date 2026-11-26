@@ -16,6 +16,10 @@
 
 const PREFIX = 'rc:v1:'
 const inflight = {}
+/* ★ 体积保护：超过该字符数的响应「只合并在途、不缓存结果」。
+   刚修完的 -501000 是响应 >1MiB 被网关拒；这里避免大结果深拷贝让内存峰值翻倍。
+   小响应（字典 / 身份 / 常规课节）照常缓存，不影响优化收益。 */
+const MAX_CACHE_CHARS = 350 * 1024
 
 function stableKey(name, data) {
   const obj = data || {}
@@ -57,7 +61,11 @@ function cachedRead(name, data, ttl) {
   const p = wx.cloud.callFunction({ name: name, data: data || {} })
     .then(function (res) {
       delete inflight[key]
-      if (app && app.setCache && ttl !== 0) app.setCache(key, clone(res), ttl === undefined ? 300 : ttl)
+      let size = 0
+      try { size = JSON.stringify(res).length } catch (e) { size = 1 << 30 }
+      if (app && app.setCache && ttl !== 0 && size <= MAX_CACHE_CHARS) {
+        app.setCache(key, clone(res), ttl === undefined ? 300 : ttl)
+      }
       return res
     })
     .catch(function (err) {
