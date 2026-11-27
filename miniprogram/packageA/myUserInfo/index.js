@@ -1,3 +1,5 @@
+const readCache = require('../../utils/readCache.js')
+
 Page({
 
     /**
@@ -17,16 +19,40 @@ Page({
      * 生命周期函数--监听页面加载
      */
     onLoad(options) {
-		let userInfo = wx.getStorageSync('userInfo')
-		this.setData({
-			nickName: userInfo.nickName,
-      avatarUrl: userInfo.avatarUrl,
-      name: userInfo.name,
-      position: userInfo.position,
-      introduce: userInfo.introduce,
-      fileID: userInfo.fileID,
-      userInfo: userInfo
-		})
+      /* ★ ① 先读本机缓存秒开渲染，不再出现「每次都是空表单」。 */
+      let cached = {}
+      try { cached = wx.getStorageSync('userInfo') || {} } catch (e) {}
+      this._paint(cached)
+
+      /* ★ ② 再拉云端完整档案覆盖。getUsers 的投影原本漏了
+         fileID / position / introduce，首页把那份残缺结果写进 userInfo 缓存后，
+         本页读到的永远是空，于是每次都要重填、还因 fileID 为空被迫重传头像。
+         云函数已补投影；这里主动拉一次，即使首页曾用旧投影覆盖过也能拿回真实内容。 */
+      const openid = cached._openid
+      if (!openid) return
+      wx.cloud.callFunction({
+        name: 'getUsers',
+        data: { page: 0, pageSize: 1, _openid: openid }
+      }).then(re => {
+        const rows = (re && re.result) || []
+        if (!Array.isArray(rows) || !rows.length) return
+        const user = Object.assign({}, cached, rows[0])
+        this._paint(user)
+        try { wx.setStorageSync('userInfo', user) } catch (e) {}
+        readCache.setIdentity(openid, user, 60)
+      }).catch(() => {})
+    },
+
+    _paint(u) {
+      this.setData({
+        nickName: u.nickName || '',
+        avatarUrl: u.avatarUrl || '',
+        name: u.name || '',
+        position: u.position || '',
+        introduce: u.introduce || '',
+        fileID: u.fileID || '',
+        userInfo: u || {}
+      })
     },
 
     /**
@@ -101,10 +127,11 @@ Page({
     formSubmit(e) {
       let userInfo = wx.getStorageSync('userInfo');
       console.log('form表单提交', e)
-      if (!this.data.fileID) {
+      /* ★ 已有头像即可保存，不再因为旧投影导致 fileID 为空就强制重传头像。 */
+      if (!this.data.avatarUrl) {
         wx.showToast({
-          icon: 'error',
-          title: '请上传头像',
+          icon: 'none',
+          title: '请先上传头像',
         })
         return
       }
@@ -137,11 +164,22 @@ Page({
             duration: 2000
           })
 
-          userInfo = {...userInfo, ...this.data}
-          wx.setStorageSync('userInfo', userInfo)
+          /* ★ 只合并业务字段，避免把整个 this.data（含 userInfo 自身）嵌套进去；
+             同时刷新首页用的 60 秒身份缓存，否则退回首页 onShow 会用旧档案
+             把刚保存的资料覆盖回去，下次进来又是空表单。 */
+          const merged = Object.assign({}, userInfo, {
+            nickName: this.data.nickName,
+            avatarUrl: this.data.avatarUrl,
+            fileID: this.data.fileID,
+            name: this.data.name,
+            position: this.data.position,
+            introduce: this.data.introduce
+          })
+          wx.setStorageSync('userInfo', merged)
+          readCache.setIdentity(userInfo._openid, merged, 60)
           wx.cloud.callFunction({
             name: 'updateTearcher',
-            data: userInfo
+            data: merged
           }).then(resp => {
             console.log('updateTearcher', resp)
           }).catch(err => {

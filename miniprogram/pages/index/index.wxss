@@ -75,11 +75,10 @@
 } 
  
 .container-swiper-item-text-overflow { 
-  display: -webkit-box; 
-  -webkit-line-clamp: 3; 
-  -webkit-box-orient: vertical; 
-  overflow: hidden; 
-  text-overflow: ellipsis; 
+  /* ★ 原来用三行截断 + 隐藏溢出，长介绍会显示不完所有文字。
+     现在完整换行；swiper 高度由 JS 按真实内容动态给出。 */
+  white-space: pre-wrap;
+  word-break: break-all;
 } 
  
 .container-swiper-item-text-p { 

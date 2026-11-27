@@ -56,7 +56,12 @@ exports.main = async (event, context) => {
       .where(where)
       .field({
         _id: true, name: true, nickName: true, avatarUrl: true,
-        isTop: true, tearchreOpenid_course: true, _openid: true, isTeacher: true
+        isTop: true, tearchreOpenid_course: true, _openid: true, isTeacher: true,
+        /* ★ 补回个人资料字段：原来投影漏了这 4 个，首页把结果写进
+           wx.setStorageSync('userInfo') 后，个人资料页读到的永远是空，
+           于是每次都要重填、且因 fileID 为空被 formSubmit 强制重传头像。
+           云端 editUsers 其实一直有写入 name/fileID/position/introduce，只是读不出来。 */
+        fileID: true, position: true, introduce: true, gender: true
       })
       .skip(page * pageSize)
       .limit(pageSize)

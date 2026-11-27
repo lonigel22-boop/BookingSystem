@@ -49,7 +49,8 @@
   <!-- 去掉音乐教师相关内容 --> 
   <view class="container-swiper"> 
     <swiper indicator-dots="{{true}}" 
-      autoplay="{{true}}" interval="{{4000}}" duration="{{800}}"> 
+      autoplay="{{true}}" interval="{{4000}}" duration="{{800}}"
+      style="height: {{swiperHeight}}px"> 
       <block wx:for="{{teachers}}" wx:key="*this"> 
         <swiper-item class="container-swiper-item"> 
           <image 
