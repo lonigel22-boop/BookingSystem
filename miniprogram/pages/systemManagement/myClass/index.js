@@ -6,6 +6,10 @@ const readCache = require('../../../utils/readCache.js')
 /* 结课状态存本机：课程挂在 users.tearchreOpenid_course[].course[] 里，
    没有独立集合可写，走缓存最稳，不改任何云端数据。换设备不同步。 */
 const FINISH_KEY = 'ksst_myclass_finished_courses'
+/* ★ 额外存一份 [学生名, 课程名]，给「课时导出」的结课分页用。
+   原 key 是 users._id + '_' + course._id，导出数据里却是 _openid + courseId，
+   两套 ID 对不上时按 key 反查会落空。只写本机，不动云端、不动现有结课状态。 */
+const FINISH_NAMES_KEY = 'ksst_myclass_finished_names'
 
 /* v10：预约 / 修改课时流程全部收进本页三层弹窗，不再 navigateTo 到
    appointmentCourseHandle / courseEdit。两个旧页面保留注册，不影响其它入口。
@@ -106,6 +110,35 @@ Page({
     this.getResertUsers()
   },
 
+  /* ★ 把老版本结课标记（只有 users._id + course._id 的 key）翻译成名字清单。
+     导出页读的 myCourses 用的是 _openid + courseId，与 users._id 常对不上，
+     所以必须在本页（有学生档案）完成翻译；导出页只认名字，不再按 ID 反查。
+     每次用户列表加载完成后重建一次：fin 是唯一权威（长按/取消都写它），
+     覆盖式重建还能自动清掉「取消结课后名字清单里的残留」。
+     纯本机读写，不发云函数、不动数据库。 */
+  _rebuildFinishNames() {
+    try {
+      const fin = wx.getStorageSync(FINISH_KEY) || {}
+      const list = this.data.userList || []
+      if (!list.length) return   // 列表没加载好时不要覆盖，避免误清
+      const names = [], seen = {}
+      list.forEach(s => {
+        const sname = s.name || s.nickName || ''
+        const courses = (s.course && s.course.course) || []
+        courses.forEach(c => {
+          const key = String(s._id || '') + '_' + String(c._id || '')
+          const cname = c.title || c.courseName || c.name || ''
+          if (!fin[key] || !sname || !cname) return
+          const nk = sname + '|' + cname
+          if (seen[nk]) return
+          seen[nk] = 1
+          names.push([sname, cname])
+        })
+      })
+      wx.setStorageSync(FINISH_NAMES_KEY, names)
+    } catch (e) {}
+  },
+
   // ───────────────────────── 主页面数据 ─────────────────────────
   getResertUsers() {
     /* 快速连点搜索 或 onShow 撞车时，用代次丢掉旧响应，避免列表叠加 */
@@ -201,6 +234,17 @@ Page({
     if (now) fin[key] = 1
     else delete fin[key]
     try { wx.setStorageSync(FINISH_KEY, fin) } catch (err) {}
+    /* ★ 同步维护名字清单（结课加、取消结课删），与 fin 同一事务里写，不新增云调用 */
+    try {
+      const s = this.data.l1Student || {}
+      const sname = s.name || s.nickName || ''
+      const cname = c.title || c.courseName || c.name || ''
+      let names = wx.getStorageSync(FINISH_NAMES_KEY) || []
+      if (!Array.isArray(names)) names = []
+      names = names.filter(x => !(Array.isArray(x) && x[0] === sname && x[1] === cname))
+      if (now && sname && cname) names.push([sname, cname])
+      wx.setStorageSync(FINISH_NAMES_KEY, names)
+    } catch (err) {}
     this.setData({
       finishedCourses: fin,
       l1Courses: this.buildL1Courses(this.data.l1Student, fin)
@@ -304,6 +348,7 @@ Page({
       userListResult: this.applySort(this.data.userList.concat(tempResult))
     })
     if (raw.length < this.data.pageSize) this.setData({ hasMore: false })
+    this._rebuildFinishNames()
     this.getMycourse()
   },
 

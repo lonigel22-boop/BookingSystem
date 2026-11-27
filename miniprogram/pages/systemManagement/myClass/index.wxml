@@ -197,7 +197,7 @@
           </van-radio-group>
           <view class="empty" wx:if="{{!shopList.length}}">没有门店数据</view>
         </scroll-view>
-        <view class="primary full" catchtap="saveShop">确定</view>
+        <view class="primary full sub-confirm" catchtap="saveShop">确定</view>
       </view>
 
       <view class="sub" wx:if="{{subPanel === 'room'}}">
@@ -208,7 +208,7 @@
           </van-radio-group>
           <view class="empty" wx:if="{{!roomList.length}}">该门店还没有房间</view>
         </scroll-view>
-        <view class="primary full" catchtap="saveRoom">确定</view>
+        <view class="primary full sub-confirm" catchtap="saveRoom">确定</view>
       </view>
     </view>
     <view class="ov-foot two">

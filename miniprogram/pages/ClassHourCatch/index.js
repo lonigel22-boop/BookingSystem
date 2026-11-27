@@ -78,7 +78,9 @@ Page({
 
     const [year, month] = dateStr.split('-')
     const startDate = new Date(year, month - 1, 1)
-    const endDate = new Date(year, month, 0)
+    /* ★ 与日历页对齐：月末改为「次月 1 日 00:00」。
+       原来 new Date(year, month, 0) 是当月最后一天 00:00，会漏掉最后一天全天课程。 */
+    const endDate = new Date(year, month, 1)
 
     const p = wx.cloud.callFunction({
       name: 'getMyCourse',
@@ -128,6 +130,64 @@ Page({
     })
   },
 
+
+  /* ★ 生成「本月结课课程」分页数据（两列：结课学生名称 / 结课课程名称）。
+     判据① 该【课程】已结课 —— 只认 myClass 长按结课的课程级标记：
+        (a) ksst_myclass_finished_courses：key = users._id + '_' + course._id
+        (b) ksst_myclass_finished_names：[学生名, 课程名] 名字清单（绕过两套 ID 不一致）
+     ⚠️ 绝不读 myCourses.finished —— 那是「单节课已上完」，由 autoFinishCourses
+        按 endTime<=now 自动打给每一节上过的课，不是结课。上一轮误用它导致
+        所有本月上过课的学生都被统计进来。
+     判据② 该课程最后一节课落在导出月份（与当月明细按名字取交集实现）。
+     必须在格式化 / delete finished 之前调用（startTime 还是数值时间戳）。
+     不额外发云函数、不额外读库。 */
+  buildFinishedRows(rawCourses, year, month) {
+    let fin = {}
+    try { fin = wx.getStorageSync('ksst_myclass_finished_courses') || {} } catch (e) { fin = {} }
+    let namePairs = []
+    try {
+      const v = wx.getStorageSync('ksst_myclass_finished_names')
+      if (Array.isArray(v)) namePairs = v
+    } catch (e) {}
+    if (!Object.keys(fin).length && !namePairs.length) return []
+
+    const mStart = new Date(year, month - 1, 1).getTime()
+    const mEnd = new Date(year, month, 1).getTime()
+    // 当月明细里真实出现的 (学生名, 课程名) → 该组最后一节时间戳
+    // 判据②：只有这个集合里的课程才有资格输出，天然排除「当月没上过课」的残留标记
+    const monthLast = {}
+    ;(rawCourses || []).forEach(c => {
+      const t = Number(c.startTime)
+      if (!(t >= mStart && t < mEnd)) return
+      const k = String(c.name || '') + '|' + String(c.courseName || c.title || '')
+      if (!monthLast[k] || t > monthLast[k]) monthLast[k] = t
+    })
+
+    const out = [], seen = {}
+    const push = (a, b) => {
+      const k = a + '|' + b
+      if (!a || !b || seen[k] || !monthLast[k]) return
+      seen[k] = 1
+      out.push([a, b])
+    }
+    // 来源 (a)：本机 key 标记（命中当月明细里的课程才输出）
+    ;(rawCourses || []).forEach(c => {
+      const cid = c.courseId || c.course_id || ''
+      const sid = c.studentId || c._openid || ''
+      const oid = c._openid || ''
+      const cname = c.courseName || c.title || ''
+      const cand = [sid + '_' + cid, oid + '_' + cid, sid + '_' + cname, oid + '_' + cname]
+      if (!cand.some(k => k && k !== '_' && fin[k])) return
+      push(String(c.name || ''), String(cname))
+    })
+    // 来源 (b)：名字清单（myClass 每次长按/取消都维护，旧标记由 _rebuildFinishNames 迁移）
+    namePairs.forEach(p => {
+      if (Array.isArray(p)) push(String(p[0] || ''), String(p[1] || ''))
+    })
+    return out
+  },
+
+
   // 导出课时（复用同一份原始数据，不再重复查库）
   exportClassHours() {
     if (!this.data.selectedTeacher || !this.data.selectedDate) {
@@ -138,6 +198,8 @@ Page({
     wx.showLoading({ title: '导出中', mask: true })
     const [year, month] = this.data.selectedDate.split('-')
     this.loadRawCourses().then(resultData => {
+      /* ★ 先用原始数值时间戳 + 课程级结课标记算「本月结课课程」，再格式化 / 删 finished */
+      const finishedRows = this.buildFinishedRows(resultData, parseInt(year), parseInt(month))
       resultData.forEach((el, index) => {
         el.classHour = index + 1
         el.startTime = moment(el.startTime).format('YYYY-MM-DD HH:mm:ss')
@@ -151,7 +213,9 @@ Page({
         data: {
           data: resultData,
           month: parseInt(month),
-          name: this.data.selectedTeacher.name || this.data.selectedTeacher.nickName
+          year: parseInt(year),
+          name: this.data.selectedTeacher.name || this.data.selectedTeacher.nickName,
+          finishedCourses: finishedRows
         }
       }).then(async resp => {
         if (!resp.result || !resp.result.fileID) {
